@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Configuration and Secrets
+.env
+config.py  # Only ignore if this contains sensitive API keys/secrets
+
+# Playwright / Browser binaries
+# (Optional: usually these are installed in local user data, 
+# but if you have local drivers, ignore them)
+.playwright/
+
+# Unit test / Coverage reports
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / OS specific files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
