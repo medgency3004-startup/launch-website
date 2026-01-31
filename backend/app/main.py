@@ -1,5 +1,6 @@
 from app.providers import one_mg
 from app.providers import apollo
+from app.providers import truemeds
 
 
 def run():
@@ -8,11 +9,9 @@ def run():
     all_results = []
     all_results.extend(one_mg.search("Dolo 650", "DELHI"))
     all_results.extend(apollo.search("dolo 650"))
+    all_results.extend(truemeds.search("dolo 650"))
 
     print(f"Total Medicines: {len(all_results)}")
-
-    for med in all_results:
-        print(med)
 
 
 
