@@ -2,8 +2,9 @@ import requests
 import time
 from datetime import datetime
 from typing import List
+import json
 
-from app.models.medicine import MedicineAvailability
+from app.models.medicine import Medicine
 from app.utils.parsers import parse_price, parse_discount, parse_eta
 from app.config import REQUEST_DELAY
 
@@ -22,88 +23,53 @@ HEADERS = {
 }
 
 
-def search(medicine: str, city: str) -> List[MedicineAvailability]:
+def search(medicine: str, city: str) -> List[Medicine]:
     session = requests.Session()
     session.headers.update(HEADERS)
     session.headers["x-city"] = city
     session.cookies.update({"city": city})
 
-    results: List[MedicineAvailability] = []
-    seen_skus = set()
-    page = 0
+    results: List[Medicine] = []
+    params = {
+        "q": medicine,
+        "city": city,
+        "page_number": 0,
+        "per_page": 5,
+        "types": "sku,allopathy",
+        "sort": "relevance",
+        "fetch_eta": "true",
+        "is_city_serviceable": "true",
+    }
 
-    MAX_PAGES = 3  # DEBUG SAFETY (increase later)
 
-    while page < MAX_PAGES:
-        print(f"📡 1mg | {city} | page {page}")
+    try:
+        r = session.get(BASE_URL, params=params, timeout=20)
+    except requests.RequestException as e:
+        print(f"❌ Network error: {e}")
+        return []
+        
+    if r.status_code != 200:
+        print(f"❌ HTTP {r.status_code}")
+        return []
 
-        params = {
-            "q": medicine,
-            "city": city,
-            "page_number": page,
-            "per_page": 20,
-            "types": "sku,allopathy",
-            "sort": "relevance",
-            "fetch_eta": "true",
-            "is_city_serviceable": "true",
-        }
+    data = r.json().get("data", {}).get("search_results", [])
+    if not data:
+        print("🛑 No data returned")
+        return []
 
-        try:
-            r = session.get(BASE_URL, params=params, timeout=20)
-        except requests.RequestException as e:
-            print(f"❌ Network error: {e}")
-            break
+    for item in data:
+        prices = item.get("prices", {})
 
-        if r.status_code != 200:
-            print(f"❌ HTTP {r.status_code}")
-            break
-
-        data = r.json().get("data", {}).get("search_results", [])
-        if not data:
-            print("🛑 No data returned")
-            break
-
-        new_items = 0
-
-        for item in data:
-            sku = str(item.get("id"))
-            if sku in seen_skus:
-                continue
-
-            seen_skus.add(sku)
-            new_items += 1
-
-            prices = item.get("prices", {})
-
-            results.append(
-                MedicineAvailability(
-                    provider="tata_1mg",
-                    sku_id=sku,
-                    medicine_name=item.get("name"),
-                    city=city,
-
-                    available=item.get("available"),
-                    rx_required=item.get("rx_required"),
-
-                    price=parse_price(prices.get("discounted_price")),
-                    mrp=parse_price(prices.get("mrp")),
-                    discount_percent=parse_discount(prices.get("discount")),
-
-                    eta_minutes=parse_eta(item.get("eta")),
-                    delivery_date=None,
-
-                    url="https://www.1mg.com" + item.get("url", ""),
-                    last_checked_at=datetime.utcnow(),
-                )
+        results.append(
+            Medicine(
+                provider="tata_1mg",
+                medicine_name=item.get("name"),
+                available=item.get("available"),
+                price=parse_price(prices.get("discounted_price")),
+                mrp=parse_price(prices.get("mrp")),
+                url="https://www.1mg.com" + item.get("url", ""),
             )
-
-        print(f"✅ Added {new_items} new items")
-
-        if new_items == 0:
-            print("🛑 No new SKUs, stopping pagination")
-            break
-
-        page += 1
-        time.sleep(REQUEST_DELAY)
+        )
+    print(f"Tata 1mg gave {len(data)} items")
 
     return results

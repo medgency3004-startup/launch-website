@@ -3,20 +3,20 @@ from datetime import datetime
 
 from playwright.sync_api import sync_playwright
 
-from app.models.medicine import MedicineAvailability
+from app.models.medicine import Medicine
 from app.utils.parsers import parse_discount, parse_delivery_date
 
 
 NETMEDS_SEARCH_URL = "https://www.netmeds.com/products?q={query}"
 
 
-def search(medicine: str, city: str) -> List[MedicineAvailability]:
+def search(medicine: str, city: str) -> List[Medicine]:
     """
     Netmeds provider using Playwright.
     Calls Netmeds API from inside browser context.
     """
 
-    results: List[MedicineAvailability] = []
+    results: List[Medicine] = []
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -43,7 +43,7 @@ def search(medicine: str, city: str) -> List[MedicineAvailability]:
 
 
                         results.append(
-                            MedicineAvailability(
+                            Medicine(
                                 provider="netmeds",
                                 sku_id=str(item.get("item_id")),
                                 medicine_name=item.get("slug", "")

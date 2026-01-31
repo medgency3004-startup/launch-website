@@ -4,10 +4,20 @@ from datetime import datetime
 import re
 
 
-def parse_price(value: str) -> Optional[float]:
-    if not value:
+def parse_price(value):
+    if value is None:
         return None
-    return float(value.replace("₹", "").strip())
+
+    # Apollo returns float
+    if isinstance(value, (int, float)):
+        return float(value)
+
+    # 1mg / others return strings like "₹32.13"
+    if isinstance(value, str):
+        return float(value.replace("₹", "").strip())
+
+    return None
+
 
 
 def parse_discount(discount):
