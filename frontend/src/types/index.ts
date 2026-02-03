@@ -3,6 +3,7 @@ export interface Medicine {
     name: string;
     price: number;
     pharmacy: string;
+    url?: string | null;
   }
   
   export interface SearchState {

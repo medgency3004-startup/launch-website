@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import logo from "../../assets/images/logo.png";
 
 export default function Navbar() {
@@ -10,41 +11,39 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-white border-b border-gray-100">
-      {/* CONTAINER */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-12 py-5">
-        {/* LOGO */}
-        <div className="flex items-center">
-          <Image
-            src={logo}
-            alt="Medgency"
-            width={300}
-            height={75}
-            priority
-          />
-        </div>
-
-        {/* NAV ITEMS */}
-        <div className="flex items-center gap-10">
-          {/* LINKS */}
-          <div className="flex items-center gap-8">
-            <span className="text-[#003554] text-base font-medium cursor-pointer">
-              About Us
-            </span>
-
-            <span
-              className="text-[#003554] text-base font-medium cursor-pointer"
-              onClick={scrollToHowItWorks}
-            >
-              Help
-            </span>
+    <nav className="w-full bg-white/90 backdrop-blur border-b border-gray-100">
+      <div className="mx-auto max-w-7xl px-6 md:px-12">
+        <div className="flex h-16 md:h-20 items-center justify-between">
+          <div className="flex items-center">
+            <Link href="/" aria-label="Go to home">
+              <Image
+                src={logo}
+                alt="Medgency"
+                width={300}
+                height={75}
+                priority
+                className="h-10 w-auto md:h-16 cursor-pointer"
+                sizes="(max-width: 768px) 160px, 300px"
+              />
+            </Link>
           </div>
 
-          {/* ACTION BUTTONS */}
-          <div className="flex items-center gap-4">
-            
-
-            
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/" className="text-[#003554] text-base font-medium hover:underline underline-offset-4">
+              About Us
+            </Link>
+            <button
+              onClick={scrollToHowItWorks}
+              className="text-[#003554] text-base font-medium hover:underline underline-offset-4"
+            >
+              Help
+            </button>
+            <Link
+              href="/search"
+              className="ml-2 inline-flex items-center rounded-full bg-[#0B2C3D] text-white px-5 py-2 text-sm font-semibold hover:bg-[#163a4d] transition-colors"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </div>

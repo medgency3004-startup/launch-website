@@ -33,38 +33,63 @@ export default function HomePage() {
   return (
     <main className="w-full">
       {/* HERO & SEARCH */}
-      <section className="bg-[#F5F7DA] px-12 py-24">
-        <h1 className="text-6xl font-serif leading-tight text-[#0B2C3D]">
-          Healthcare,
-          <br />
-          Without The Guesswork
-        </h1>
+      <section className="bg-gradient-to-b from-white to-[#EEF3CC] px-6 md:px-12 py-20 md:py-28">
+        <div className="max-w-7xl mx-auto">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#E7F6FB] text-[#0B2C3D] px-4 py-2 text-xs font-semibold">
+              Connecting care in critical moments
+            </div>
+            <h1 className="mt-6 text-5xl md:text-6xl font-serif leading-tight text-[#0B2C3D]">
+              Healthcare,
+              <br />
+              Without The Guesswork
+            </h1>
+            <p className="mt-4 text-lg text-[#0B2C3D]">
+              Explore medicine prices across trusted providers and save.
+            </p>
+          </div>
 
-        <p className="mt-4 text-lg text-[#0B2C3D]">
-          Explore care options with confidence.
-        </p>
+          {/* SEARCH INPUT */}
+          <div className="mt-8 flex w-full max-w-3xl rounded-full bg-white ring-1 ring-slate-200 shadow-lg">
+            <input
+              value={state.query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="Search medicines (e.g., Paracetamol)..."
+              className="flex-1 px-6 py-4 rounded-l-full outline-none text-[#0B2C3D] placeholder:text-slate-500"
+            />
+            <button
+              onClick={handleSearch}
+              className="bg-[#0B2C3D] text-white px-8 md:px-10 font-bold rounded-r-full hover:bg-[#163a4d] transition-colors"
+            >
+              Search
+            </button>
+          </div>
 
-        {/* SEARCH INPUT */}
-        <div className="mt-8 flex w-full max-w-3xl shadow-lg">
-          <input
-            value={state.query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Search medicines (e.g., Paracetamol)..."
-            className="flex-1 px-5 py-4 border border-gray-300 outline-none text-[#0B2C3D]"
-          />
-
-          <button
-            onClick={handleSearch}
-            className="bg-[#0B2C3D] text-white px-10 font-bold hover:bg-[#163a4d] transition-colors"
-          >
-            Search
-          </button>
+        <div className="mt-4 flex gap-3">
+          {["Paracetamol", "Dolo 650", "Crocin"].map((q) => (
+            <button
+              key={q}
+              onClick={() => router.push(`/search?q=${encodeURIComponent(q)}`)}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+            >
+              {q}
+            </button>
+          ))}
         </div>
 
         {state.error && (
           <p className="mt-2 text-red-600 font-medium">{state.error}</p>
         )}
+        <div className="mt-6">
+          <button
+            onClick={() => router.push("/search")}
+            className="inline-flex items-center gap-2 rounded-full bg-[#0B2C3D] text-white px-6 py-3 text-sm font-semibold hover:bg-[#163a4d] transition-colors"
+          >
+            Get Started
+          </button>
+        </div>
+        </div>
       </section>
 
       {/* PHARMACIES TRUST SECTION */}
