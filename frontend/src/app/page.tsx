@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation"; // Added for redirection
 import { useMedicineSearch } from "../hooks/search";
 
 // logos
@@ -18,11 +19,20 @@ import cartIcon from "../../assets/icons/cart.png";
 import thumbsUp from "../../assets/icons/thumbsup.png";
 
 export default function HomePage() {
-  const { state, setQuery, searchMedicines } = useMedicineSearch();
+  const { state, setQuery } = useMedicineSearch();
+  const router = useRouter();
+
+  // Handle Redirection to Search Results Page
+  const handleSearch = () => {
+    if (state.query.trim()) {
+      // Redirects to /search?q=your-query
+      router.push(`/search?q=${encodeURIComponent(state.query)}`);
+    }
+  };
 
   return (
     <main className="w-full">
-      {/* HERO */}
+      {/* HERO & SEARCH */}
       <section className="bg-[#F5F7DA] px-12 py-24">
         <h1 className="text-6xl font-serif leading-tight text-[#0B2C3D]">
           Healthcare,
@@ -34,79 +44,76 @@ export default function HomePage() {
           Explore care options with confidence.
         </p>
 
-        {/* SEARCH */}
-        <div className="mt-8 flex w-full max-w-3xl">
+        {/* SEARCH INPUT */}
+        <div className="mt-8 flex w-full max-w-3xl shadow-lg">
           <input
             value={state.query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search medicines..."
-            className="flex-1 px-5 py-4 border border-gray-300 outline-none"
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            placeholder="Search medicines (e.g., Paracetamol)..."
+            className="flex-1 px-5 py-4 border border-gray-300 outline-none text-[#0B2C3D]"
           />
 
           <button
-            onClick={searchMedicines}
-            disabled={state.loading}
-            className="bg-[#0B2C3D] text-white px-10"
+            onClick={handleSearch}
+            className="bg-[#0B2C3D] text-white px-10 font-bold hover:bg-[#163a4d] transition-colors"
           >
-            {state.loading ? "Searching..." : "Search"}
+            Search
           </button>
         </div>
 
         {state.error && (
-          <p className="mt-2 text-red-600">{state.error}</p>
+          <p className="mt-2 text-red-600 font-medium">{state.error}</p>
         )}
       </section>
 
-      {/* PHARMACIES */}
-      <section className="px-12 py-16 text-center">
-        <p className="text-[#0B2C3D] text-lg mb-8">
+      {/* PHARMACIES TRUST SECTION */}
+      <section className="px-12 py-16 text-center border-b border-gray-100">
+        <p className="text-[#0B2C3D] text-lg mb-8 opacity-70">
           Compare across popular pharmacies nationwide
         </p>
 
-        <div className="flex justify-center items-center gap-14">
-          <Image src={pharmacy} alt="Pharmacy" />
-          <Image src={wellness} alt="Wellness Forever" />
-          <Image src={tata1mg} alt="Tata 1mg" />
-          <Image src={pharmeasy} alt="PharmEasy" />
+        <div className="flex justify-center items-center gap-14 grayscale opacity-60">
+          <Image src={pharmacy} alt="Pharmacy" className="h-10 w-auto" />
+          <Image src={wellness} alt="Wellness Forever" className="h-10 w-auto" />
+          <Image src={tata1mg} alt="Tata 1mg" className="h-10 w-auto" />
+          <Image src={pharmeasy} alt="PharmEasy" className="h-10 w-auto" />
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section
-        id="how-it-works"
-        className="px-12 py-24 text-center"
-      >
+      <section id="how-it-works" className="px-12 py-24 text-center">
         <h2 className="text-4xl font-serif text-[#0B2C3D] mb-16">
           How it works
         </h2>
 
-        <div className="flex justify-between max-w-6xl mx-auto">
-          <div className="flex flex-col items-center max-w-xs">
-            <Image src={searchIcon} alt="Search" />
-            <h4 className="mt-6 text-lg font-semibold">
-              1. Search
-            </h4>
-            <p className="mt-2 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
+          <div className="flex flex-col items-center">
+            <div className="h-20 w-20 flex items-center justify-center">
+              <Image src={searchIcon} alt="Search" />
+            </div>
+            <h4 className="mt-6 text-xl font-bold text-[#0B2C3D]">1. Search</h4>
+            <p className="mt-2 text-slate-600">
               Search your prescribed medicine
             </p>
           </div>
 
-          <div className="flex flex-col items-center max-w-xs">
-            <Image src={compareIcon} alt="Compare" />
-            <h4 className="mt-6 text-lg font-semibold">
-              2. Compare
-            </h4>
-            <p className="mt-2 text-sm">
+          <div className="flex flex-col items-center">
+            <div className="h-20 w-20 flex items-center justify-center">
+              <Image src={compareIcon} alt="Compare" />
+            </div>
+            <h4 className="mt-6 text-xl font-bold text-[#0B2C3D]">2. Compare</h4>
+            <p className="mt-2 text-slate-600">
               Compare medicine prices across many pharmacies.
             </p>
           </div>
 
-          <div className="flex flex-col items-center max-w-xs">
-            <Image src={cartIcon} alt="Purchase" />
-            <h4 className="mt-6 text-lg font-semibold">
-              3. Purchase
-            </h4>
-            <p className="mt-2 text-sm">
+          <div className="flex flex-col items-center">
+            <div className="h-20 w-20 flex items-center justify-center">
+              <Image src={cartIcon} alt="Purchase" />
+            </div>
+            <h4 className="mt-6 text-xl font-bold text-[#0B2C3D]">3. Purchase</h4>
+            <p className="mt-2 text-slate-600">
               Request your purchase with a tap
             </p>
           </div>
@@ -114,49 +121,34 @@ export default function HomePage() {
       </section>
 
       {/* WHY CHOOSE US */}
-<section className="px-12 py-24 text-center bg-[#F9FAFB]">
-  <h2 className="text-4xl font-serif text-[#0B2C3D] mb-16">
-    Why Choose Us
-  </h2>
+      <section className="px-12 py-24 text-center bg-[#F9FAFB]">
+        <h2 className="text-4xl font-serif text-[#0B2C3D] mb-16">
+          Why Choose Us
+        </h2>
 
-  <div className="flex justify-between max-w-6xl mx-auto">
-    {/* ITEM 1 */}
-    <div className="flex flex-col items-center max-w-xs">
-      <Image
-        src={clarityIcon}
-        alt="Clarity"
-        className="mb-6"
-      />
-      <p className="text-lg font-medium">
-        Clarity over complexity
-      </p>
-    </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
+          <div className="flex flex-col items-center bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <Image src={clarityIcon} alt="Clarity" className="mb-6 h-12 w-auto" />
+            <p className="text-lg font-bold text-[#0B2C3D]">
+              Clarity over complexity
+            </p>
+          </div>
 
-    {/* ITEM 2 */}
-    <div className="flex flex-col items-center max-w-xs">
-      <Image
-        src={thumbsUp}
-        alt="Convenience"
-        className="mb-6"
-      />
-      <p className="text-lg font-medium">
-        One-search convenience
-      </p>
-    </div>
+          <div className="flex flex-col items-center bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <Image src={thumbsUp} alt="Convenience" className="mb-6 h-12 w-auto" />
+            <p className="text-lg font-bold text-[#0B2C3D]">
+              One-search convenience
+            </p>
+          </div>
 
-    {/* ITEM 3 */}
-    <div className="flex flex-col items-center max-w-xs">
-      <Image
-        src={patientIcon}
-        alt="Patient First"
-        className="mb-6"
-      />
-      <p className="text-lg font-medium">
-        Patient-first, not provider-first
-      </p>
-    </div>
-  </div>
-</section>
+          <div className="flex flex-col items-center bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <Image src={patientIcon} alt="Patient First" className="mb-6 h-12 w-auto" />
+            <p className="text-lg font-bold text-[#0B2C3D]">
+              Patient-first, not provider-first
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

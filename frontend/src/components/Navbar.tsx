@@ -42,13 +42,9 @@ export default function Navbar() {
 
           {/* ACTION BUTTONS */}
           <div className="flex items-center gap-4">
-            <button className="border border-[#003554] text-[#003554] px-6 py-2 rounded-md">
-              Login
-            </button>
+            
 
-            <button className="bg-[#003554] text-white px-6 py-2 rounded-md">
-              Sign-up
-            </button>
+            
           </div>
         </div>
       </div>
