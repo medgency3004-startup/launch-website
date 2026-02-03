@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 from typing import Optional
 
-@dataclass
-class Medicine:
+class MedicineOut(BaseModel):
     provider: str
     medicine_name: str
     available: bool

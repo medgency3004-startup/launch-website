@@ -53,18 +53,18 @@ def search(
             timeout=15,
         )
     except requests.RequestException:
-        print("TrueMeds failed (network error)")
+        print("❌ TrueMeds network error")
         return []
 
     if resp.status_code != 200:
-        print(f"TrueMeds HTTP {resp.status_code}")
+        print(f"❌ TrueMeds HTTP {resp.status_code}")
         return []
 
     data = resp.json()
-
-    # ✅ CORRECT JSON PATH
-    response_data = data.get("responseData", {})
-    product_list = response_data.get("productList", [])
+    product_list = (
+        data.get("responseData", {})
+            .get("productList", [])
+    )
 
     results: List[Medicine] = []
 
@@ -73,13 +73,16 @@ def search(
         if not isinstance(product, dict):
             continue
 
+        mrp = parse_price(product.get("mrp"))
+        selling_price = parse_price(product.get("sellingPrice"))
+
         results.append(
             Medicine(
                 provider="truemeds",
                 medicine_name=product.get("skuName"),
-                available=(product.get("qty", 0) or 0) > 0,
-                mrp=parse_price(product.get("mrp")),
-                price=parse_price(product.get("sellingPrice")),
+                available=True,  # ✅ IMPORTANT FIX
+                mrp=mrp,
+                price=selling_price if selling_price is not None else mrp,
                 url=(
                     "https://www.truemeds.in/product/"
                     + product.get("productCode")
@@ -90,8 +93,6 @@ def search(
         )
 
     elapsed_ms = int((time.time() - start) * 1000)
-
-    # ✅ PRINT LIKE OTHER PROVIDERS
     print(f"TrueMeds gave {len(results)} items ({elapsed_ms} ms)")
 
     return results
