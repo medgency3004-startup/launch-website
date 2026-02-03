@@ -8,6 +8,8 @@ import pharmacy from "../../assets/images/pharmacy.png";
 import wellness from "../../assets/images/wellness.png";
 import tata1mg from "../../assets/images/tata1mg.png";
 import pharmeasy from "../../assets/images/pharmeasy.png";
+import clarityIcon from "../../assets/images/computer.png";
+import patientIcon from "../../assets/images/patient.png";
 
 // icons
 import searchIcon from "../../assets/icons/search.png";
@@ -112,26 +114,49 @@ export default function HomePage() {
       </section>
 
       {/* WHY CHOOSE US */}
-      <section className="px-12 py-24 text-center bg-[#F9FAFB]">
-        <h2 className="text-4xl font-serif text-[#0B2C3D] mb-16">
-          Why Choose Us
-        </h2>
+<section className="px-12 py-24 text-center bg-[#F9FAFB]">
+  <h2 className="text-4xl font-serif text-[#0B2C3D] mb-16">
+    Why Choose Us
+  </h2>
 
-        <div className="flex justify-between max-w-6xl mx-auto items-center">
-          <p className="text-lg">Clarity over complexity</p>
+  <div className="flex justify-between max-w-6xl mx-auto">
+    {/* ITEM 1 */}
+    <div className="flex flex-col items-center max-w-xs">
+      <Image
+        src={clarityIcon}
+        alt="Clarity"
+        className="mb-6"
+      />
+      <p className="text-lg font-medium">
+        Clarity over complexity
+      </p>
+    </div>
 
-          <div className="flex flex-col items-center">
-            <Image src={thumbsUp} alt="Trust" />
-            <p className="mt-4 font-medium">
-              One-search convenience
-            </p>
-          </div>
+    {/* ITEM 2 */}
+    <div className="flex flex-col items-center max-w-xs">
+      <Image
+        src={thumbsUp}
+        alt="Convenience"
+        className="mb-6"
+      />
+      <p className="text-lg font-medium">
+        One-search convenience
+      </p>
+    </div>
 
-          <p className="text-lg">
-            Patient-first, not provider-first
-          </p>
-        </div>
-      </section>
+    {/* ITEM 3 */}
+    <div className="flex flex-col items-center max-w-xs">
+      <Image
+        src={patientIcon}
+        alt="Patient First"
+        className="mb-6"
+      />
+      <p className="text-lg font-medium">
+        Patient-first, not provider-first
+      </p>
+    </div>
+  </div>
+</section>
     </main>
   );
 }

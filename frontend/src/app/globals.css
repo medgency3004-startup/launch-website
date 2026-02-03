@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* optional: smooth scroll for whole site */
 html {
   scroll-behavior: smooth;
 }
