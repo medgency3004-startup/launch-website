@@ -1,73 +1,60 @@
 from typing import List
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+import time
 from app.models.medicine import Medicine
-from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds_pw
+from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds
 from app.services.rankers import cheapest_per_provider
 
 
 def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
-    """
-    Return ALL medicines from all providers (NO filtering).
-    """
     results: List[Medicine] = []
-
-    def run_one_mg():
+    providers = [
+        ("1mg", lambda: one_mg.search(medicine, city)),
+        ("Apollo", lambda: apollo.search(medicine)),
+        ("Truemeds", lambda: truemeds.search(medicine)),
+        ("PharmEasy", lambda: pharmeasy.search(medicine)),
+        ("Medkart", lambda: medkart.search(medicine)),
+        ("Netmeds", lambda: netmeds.search(medicine, city)),
+    ]
+    def safe_run(name: str, fn):
         try:
-            return one_mg.search(medicine, city)
+            return fn()
         except Exception as e:
-            print("1mg failed:", e)
+            print(f"{name} failed:", e)
             return []
-
-    def run_apollo():
-        try:
-            return apollo.search(medicine)
-        except Exception as e:
-            print("Apollo failed:", e)
-            return []
-
-    def run_truemeds():
-        try:
-            return truemeds.search(medicine)
-        except Exception as e:
-            print("Truemeds failed:", e)
-            return []
-
-    def run_pharmeasy():
-        try:
-            return pharmeasy.search(medicine)
-        except Exception as e:
-            print("PharmEasy failed:", e)
-            return []
-
-    def run_medkart():
-        try:
-            return medkart.search(medicine)
-        except Exception as e:
-            print("Medkart failed:", e)
-            return []
-
-    def run_netmeds():
-        try:
-            return netmeds_pw.search(medicine, city)
-        except Exception as e:
-            print("Netmeds failed:", e)
-            return []
-
-    tasks = [run_one_mg, run_apollo, run_truemeds, run_pharmeasy, run_medkart, run_netmeds]
-
-    with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
-        future_map = {executor.submit(fn): fn for fn in tasks}
-        try:
-            for future in as_completed(future_map, timeout=8):
+    executor = ThreadPoolExecutor(max_workers=len(providers))
+    try:
+        futures = {executor.submit(safe_run, name, fn) for (name, fn) in providers}
+        deadline = time.time() + 4.0
+        pending = set(futures)
+        while pending:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+            done, pending = wait(pending, timeout=remaining, return_when=FIRST_COMPLETED)
+            for fut in done:
                 try:
-                    chunk = future.result()
+                    chunk = fut.result()
                     if chunk:
                         results.extend(chunk)
                 except Exception:
                     pass
-        except TimeoutError:
-            pass
-
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+    try:
+        if not any(getattr(item, "provider", "") == "pharmeasy" for item in results):
+            results.append(
+                Medicine(
+                    provider="pharmeasy",
+                    medicine_name=medicine,
+                    available=True,
+                    mrp=None,
+                    price=None,
+                    url=f"https://pharmeasy.in/search/all?name={medicine}",
+                )
+            )
+    except Exception:
+        pass
     return results
 
 

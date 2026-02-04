@@ -31,6 +31,12 @@ function OfferCard({
     if (p.includes("netmeds")) return "/logos/netmeds.svg";
     return pharmacyIcon;
   }, [provider]);
+  const buttonLabel = useMemo(() => {
+    const p = provider.toLowerCase();
+    const noPrice = !price || price === "—";
+    if (p.includes("pharmeasy") && noPrice) return "Visit Site";
+    return "Select";
+  }, [provider, price]);
   return (
     <div className="relative rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md">
       <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 px-10 py-8">
@@ -52,15 +58,17 @@ function OfferCard({
         </div>
 
         {href ? (
-          <button
-            onClick={() => window.open(href as string, "_blank", "noopener")}
+          <a
+            href={href as string}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group inline-flex items-center gap-2 rounded-xl bg-[#2d6f86] px-8 py-3 text-[15px] font-bold text-white shadow-sm transition-all hover:bg-[#1e4b5b]"
           >
-            Select
+            {buttonLabel}
             <span className="text-lg transition-transform group-hover:translate-x-1">
               →
             </span>
-          </button>
+          </a>
         ) : null}
       </div>
     </div>
@@ -102,8 +110,7 @@ function SearchContent() {
       const inProvider = selectedProviders.length === 0 ? true : selectedProviders.includes(r.pharmacy);
       const inMin = min === undefined ? true : r.price >= min;
       const inMax = max === undefined ? true : r.price <= max;
-      const hasUrl = !!r.url;
-      return inProvider && inMin && inMax && hasUrl;
+      return inProvider && inMin && inMax;
     });
     if (sort === "price-asc") {
       list = [...list].sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
@@ -170,6 +177,11 @@ function SearchContent() {
           Clear
         </button>
       </div>
+      {state.error && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          {state.error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         {/* Sidebar */}
@@ -318,7 +330,11 @@ function SearchContent() {
                   key={idx}
                   logoAlt={med.name}
                   provider={med.pharmacy}
-                  price={(med.price ?? 0).toFixed(2)}
+                  price={
+                    med.price !== null && med.price !== undefined && med.price > 0
+                      ? med.price.toFixed(2)
+                      : "—"
+                  }
                   href={med.url ?? undefined}
                 />
               ))}

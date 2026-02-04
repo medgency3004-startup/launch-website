@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    unoptimized: process.env.NODE_ENV !== "production",
     remotePatterns: [
       {
         protocol: "https",
@@ -14,10 +15,11 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    const backend = process.env.BACKEND_URL ?? "http://localhost:8001";
     return [
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:8001/api/:path*",
+        destination: `${backend}/api/:path*`,
       },
     ];
   },

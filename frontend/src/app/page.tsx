@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation"; // Added for redirection
 import { useMedicineSearch } from "../hooks/search";
+import { useRef } from "react";
 
 // logos
 import pharmacy from "../../assets/images/pharmacy.png";
@@ -21,13 +22,27 @@ import thumbsUp from "../../assets/icons/thumbsup.png";
 export default function HomePage() {
   const { state, setQuery } = useMedicineSearch();
   const router = useRouter();
+  const navLockRef = useRef(false);
 
   // Handle Redirection to Search Results Page
   const handleSearch = () => {
-    if (state.query.trim()) {
-      // Redirects to /search?q=your-query
-      router.push(`/search?q=${encodeURIComponent(state.query)}`);
-    }
+    if (navLockRef.current) return;
+    const q = state.query.trim();
+    if (!q) return;
+    navLockRef.current = true;
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+    setTimeout(() => {
+      navLockRef.current = false;
+    }, 600);
+  };
+
+  const handleNavigate = (url: string) => {
+    if (navLockRef.current) return;
+    navLockRef.current = true;
+    router.push(url);
+    setTimeout(() => {
+      navLockRef.current = false;
+    }, 600);
   };
 
   return (
@@ -70,7 +85,7 @@ export default function HomePage() {
           {["Paracetamol", "Dolo 650", "Crocin"].map((q) => (
             <button
               key={q}
-              onClick={() => router.push(`/search?q=${encodeURIComponent(q)}`)}
+              onClick={() => handleNavigate(`/search?q=${encodeURIComponent(q)}`)}
               className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 bg-white hover:bg-slate-50 transition-colors"
             >
               {q}
@@ -83,7 +98,7 @@ export default function HomePage() {
         )}
         <div className="mt-6">
           <button
-            onClick={() => router.push("/search")}
+            onClick={() => handleNavigate("/search")}
             className="inline-flex items-center gap-2 rounded-full bg-[#0B2C3D] text-white px-6 py-3 text-sm font-semibold hover:bg-[#163a4d] transition-colors"
           >
             Get Started
