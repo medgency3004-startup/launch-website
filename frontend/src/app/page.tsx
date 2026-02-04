@@ -81,16 +81,30 @@ export default function HomePage() {
             </button>
           </div>
 
-        <div className="mt-4 flex gap-2 sm:gap-3 flex-wrap">
-          {["Paracetamol", "Dolo 650", "Crocin"].map((q) => (
-            <button
-              key={q}
-              onClick={() => handleNavigate(`/search?q=${encodeURIComponent(q)}`)}
-              className="rounded-full border border-slate-200 px-3 sm:px-4 py-2 text-sm text-slate-700 bg-white hover:bg-slate-50 transition-colors"
-            >
-              {q}
-            </button>
-          ))}
+        <div className="mt-4">
+          <div className="text-xs text-slate-600 mb-2">Popular searches</div>
+          <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="inline-flex gap-2 sm:gap-3 whitespace-nowrap pr-2">
+              {[
+                "Paracetamol",
+                "Dolo 650",
+                "Crocin",
+                "Amoxicillin",
+                "Azithromycin",
+                "Cetrizine",
+                "Metformin",
+                "Atorvastatin",
+              ].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => handleNavigate(`/search?q=${encodeURIComponent(q)}`)}
+                  className="rounded-full border border-slate-200 px-3 sm:px-4 py-2 text-sm text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {state.error && (

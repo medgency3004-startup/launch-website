@@ -27,15 +27,21 @@ export default function Footer() {
 
           {/* SOCIAL ICONS */}
           <div className="flex gap-4">
-            <div className="w-8 h-8 bg-white text-[#0B2C3D] rounded-md flex items-center justify-center">
-              f
-            </div>
-            <div className="w-8 h-8 bg-white text-[#0B2C3D] rounded-md flex items-center justify-center">
-              in
-            </div>
-            <div className="w-8 h-8 bg-white text-[#0B2C3D] rounded-md flex items-center justify-center">
-              ⧉
-            </div>
+            <a href="#" className="w-8 h-8 bg-white text-[#0B2C3D] rounded-md flex items-center justify-center" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm5.5-2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>
+              </svg>
+            </a>
+            <a href="#" className="w-8 h-8 bg-white text-[#0B2C3D] rounded-md flex items-center justify-center" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 8.98h4v12H3v-12zm7 0h3.8v1.65h.05c.53-1 1.82-2.06 3.75-2.06 4.01 0 4.75 2.64 4.75 6.08v6.33h-4v-5.61c0-1.34-.02-3.06-1.87-3.06-1.88 0-2.17 1.47-2.17 2.96v5.71h-4v-12z"/>
+              </svg>
+            </a>
+            <a href="mailto:medgency@gmail.com" className="w-8 h-8 bg-white text-[#0B2C3D] rounded-md flex items-center justify-center" aria-label="Gmail">
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-1.4 3.25-6.6 4.95-6.6-4.95V6l6.6 4.95L18.6 6v1.25z"/>
+              </svg>
+            </a>
           </div>
         </div>
 
@@ -93,7 +99,7 @@ export default function Footer() {
             <PhoneIcon className="w-6 h-6" />
             <div>
               <p className="text-xs">Need Help? Call us.</p>
-              <p className="font-normal">+91 99999 99999</p>
+              <p className="font-normal">+91 6355841543</p>
             </div>
             <button className="ml-auto bg-[#0B2C3D] text-white px-4 py-2 rounded-md text-sm">
               Make Appointment
@@ -112,7 +118,7 @@ export default function Footer() {
           <div className="flex items-center gap-4 p-6">
             <MapPinIcon className="w-6 h-6" />
             <p className="font-semibold text-sm">
-              SRM, Kattankulathur, Tamil Nadu – 603202
+              SRM, Kattankulathur, Tamil Nadu – 603203
             </p>
           </div>
         </div>

@@ -81,6 +81,7 @@ function SearchContent() {
   const { state, setQuery, searchMedicines, clearSearch } = useMedicineSearch();
   const router = useRouter();
   const didInitialSearch = useRef(false);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
@@ -185,7 +186,7 @@ function SearchContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         {/* Sidebar */}
-        <aside className="space-y-6">
+        <aside className={`space-y-6 ${showFilters ? "" : "hidden"} lg:block`}>
           <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
             <div className="mb-4 font-bold text-slate-800 text-sm">Sort</div>
             <select
@@ -308,8 +309,16 @@ function SearchContent() {
             <div className="text-sm text-slate-600">
               {state.loading ? "Searching…" : `${displayedResults.length} offers`}
             </div>
-            <div className="text-xs text-slate-400">
-              {selectedProviders.length > 0 ? `Filtered by ${selectedProviders.length} providers` : "All providers"}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFilters((v) => !v)}
+                className="lg:hidden rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+              >
+                {showFilters ? "Hide Filters" : "Show Filters"}
+              </button>
+              <div className="text-xs text-slate-400">
+                {selectedProviders.length > 0 ? `Filtered by ${selectedProviders.length} providers` : "All providers"}
+              </div>
             </div>
           </div>
 

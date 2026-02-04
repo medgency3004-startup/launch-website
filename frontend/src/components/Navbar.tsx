@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import logo from "../../assets/images/logo.png";
+import { useState } from "react";
 
 export default function Navbar() {
+  const [open, setOpen] = useState(false);
   const scrollToHowItWorks = () => {
     const section = document.getElementById("how-it-works");
     section?.scrollIntoView({ behavior: "smooth" });
@@ -45,15 +47,32 @@ export default function Navbar() {
               Get Started
             </Link>
           </div>
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-3">
             <Link
               href="/search"
               className="inline-flex items-center rounded-full bg-[#0B2C3D] text-white px-4 py-2 text-sm font-semibold hover:bg-[#163a4d] transition-colors"
             >
               Search
             </Link>
+            <button
+              aria-label="Menu"
+              onClick={() => setOpen((v) => !v)}
+              className="rounded-md border border-slate-200 px-3 py-2 text-[#003554]"
+            >
+              Menu
+            </button>
           </div>
         </div>
+        {open && (
+          <div className="md:hidden px-4 pb-4 flex flex-col gap-2">
+            <Link href="/" className="text-[#003554] text-sm font-medium">
+              About Us
+            </Link>
+            <button onClick={scrollToHowItWorks} className="text-[#003554] text-sm font-medium text-left">
+              Help
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );
