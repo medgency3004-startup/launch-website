@@ -39,20 +39,20 @@ function OfferCard({
   }, [provider, price]);
   return (
     <div className="relative rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 px-10 py-8">
+      <div className="flex flex-col md:flex-row items-center gap-5 md:gap-8 px-5 py-6 sm:px-8 sm:py-8">
         
         {/* Medicine Name */}
-        <div className="w-64 flex items-center gap-4">
-          <Image src={providerLogo} alt={provider} className="h-12 w-12 object-contain" width={48} height={48} />
+        <div className="w-full md:w-64 flex items-center gap-3 md:gap-4">
+          <Image src={providerLogo} alt={provider} className="h-10 w-10 md:h-12 md:w-12 object-contain" width={48} height={48} />
           <div className="flex flex-col">
-            <span className="text-base font-semibold text-slate-800">{logoAlt}</span>
-            <span className="text-xs text-slate-500">View details and pricing on {provider}</span>
+            <span className="text-sm md:text-base font-semibold text-slate-800">{logoAlt}</span>
+            <span className="text-[11px] md:text-xs text-slate-500">View details and pricing on {provider}</span>
           </div>
         </div>
 
         {/* Price Info */}
-        <div className="flex-1 text-center md:text-left">
-          <div className="text-xl font-medium text-slate-600">
+        <div className="w-full md:flex-1 text-center md:text-left">
+          <div className="text-lg md:text-xl font-medium text-slate-600">
              Starting from ₹{price}
           </div>
         </div>
@@ -62,7 +62,7 @@ function OfferCard({
             href={href as string}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2 rounded-xl bg-[#2d6f86] px-8 py-3 text-[15px] font-bold text-white shadow-sm transition-all hover:bg-[#1e4b5b]"
+            className="group inline-flex justify-center md:justify-start items-center gap-2 rounded-xl bg-[#2d6f86] px-6 py-3 md:px-8 text-[14px] md:text-[15px] font-bold text-white shadow-sm transition-all hover:bg-[#1e4b5b] w-full md:w-auto"
           >
             {buttonLabel}
             <span className="text-lg transition-transform group-hover:translate-x-1">
