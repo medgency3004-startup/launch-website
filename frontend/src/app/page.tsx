@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation"; // Added for redirection
 import { useMedicineSearch } from "../hooks/search";
 import { useRef } from "react";
 
-// logos
-import pharmacy from "../../assets/images/pharmacy.png";
-import wellness from "../../assets/images/wellness.png";
+// logos (local/public and bundled)
 import tata1mg from "../../assets/images/tata1mg.png";
 import pharmeasy from "../../assets/images/pharmeasy.png";
 import clarityIcon from "../../assets/images/computer.png";
@@ -127,17 +125,12 @@ export default function HomePage() {
           Compare across popular pharmacies nationwide
         </p>
 
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-6 sm:gap-10 items-center justify-items-center grayscale opacity-60">
-          <Image src={pharmacy} alt="Pharmacy" className="h-8 sm:h-10 w-auto" />
-          <Image src={wellness} alt="Wellness Forever" className="h-8 sm:h-10 w-auto" />
-          <Image src={tata1mg} alt="Tata 1mg" className="h-8 sm:h-10 w-auto" />
+        <div className="grid grid-cols-5 gap-6 sm:gap-10 items-center justify-items-center grayscale opacity-60">
+          <Image src="/logos/truemeds.svg" alt="Truemeds" className="h-8 sm:h-10 w-auto" width={80} height={32} />
           <Image src={pharmeasy} alt="PharmEasy" className="h-8 sm:h-10 w-auto" />
-          <div className="hidden sm:block">
-            <Image src={pharmacy} alt="Pharmacy" className="h-8 sm:h-10 w-auto" />
-          </div>
-          <div className="hidden sm:block">
-            <Image src={wellness} alt="Wellness Forever" className="h-8 sm:h-10 w-auto" />
-          </div>
+          <Image src={tata1mg} alt="Tata 1mg" className="h-8 sm:h-10 w-auto" />
+          <Image src="/logos/medkart.svg" alt="Medkart" className="h-8 sm:h-10 w-auto" width={80} height={32} />
+          <Image src="/logos/apollo.svg" alt="Apollo Pharmacy" className="h-8 sm:h-10 w-auto" width={80} height={32} />
         </div>
       </section>
 

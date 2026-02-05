@@ -11,5 +11,6 @@ export interface Medicine {
     loading: boolean;
     error: string | null;
     results: Medicine[];
+    raw: boolean;
   }
   

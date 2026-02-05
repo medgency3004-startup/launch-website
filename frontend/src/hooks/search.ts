@@ -33,12 +33,42 @@ function errorMessage(err: unknown): string {
   return typeof m === "string" ? m : "Something went wrong. Please try again.";
 }
 
+function getBackendCandidates(): string[] {
+  const candidates: string[] = [];
+  try {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem("medgency_backend_url");
+      if (saved && typeof saved === "string" && saved.trim().length > 0) {
+        candidates.push(saved.trim());
+      }
+    }
+  } catch {}
+  try {
+    const env1 =
+      typeof process !== "undefined" &&
+      process.env &&
+      typeof process.env.NEXT_PUBLIC_BACKEND_URL === "string"
+        ? process.env.NEXT_PUBLIC_BACKEND_URL
+        : undefined;
+    const env2 =
+      typeof process !== "undefined" &&
+      process.env &&
+      typeof process.env.BACKEND_URL === "string"
+        ? process.env.BACKEND_URL
+        : undefined;
+    if (env1) candidates.push(env1);
+    if (env2) candidates.push(env2);
+  } catch {}
+  return Array.from(new Set(candidates));
+}
+
 export function useMedicineSearch() {
   const [state, setState] = useState<SearchState>({
     query: "",
     loading: false,
     error: null,
     results: [],
+    raw: false,
   });
   const lastQueryRef = useRef<string | null>(null);
   const requestIdRef = useRef<number>(0);
@@ -48,6 +78,11 @@ export function useMedicineSearch() {
 
   const setQuery = useCallback((query: string) => {
     setState((prev) => ({ ...prev, query }));
+  }, []);
+
+  const setRaw = useCallback((raw: boolean) => {
+    setState((prev) => ({ ...prev, raw }));
+    lastQueryRef.current = null;
   }, []);
 
   const searchMedicines = useCallback(async (query?: unknown) => {
@@ -60,15 +95,54 @@ export function useMedicineSearch() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const myId = ++requestIdRef.current;
-      const params = new URLSearchParams({ q, city: "DELHI", raw: "true" });
-      inFlightQueryRef.current = q;
-      const res = await fetch(`/api/search?${params.toString()}`);
-      if (!res.ok) {
-        const statusText = res.statusText || "Unknown error";
-        throw new Error(`Failed to fetch (${res.status} ${statusText})`);
+      if (controllerRef.current) {
+        controllerRef.current.abort();
+        controllerRef.current = null;
       }
-      const raw: unknown = await res.json();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      const controller = new AbortController();
+      controllerRef.current = controller;
+      timeoutRef.current = setTimeout(() => {
+        try {
+          controller.abort();
+        } catch {}
+      }, 8000);
+      const myId = ++requestIdRef.current;
+      const params = new URLSearchParams({ q, city: "DELHI", raw: state.raw ? "true" : "false" });
+      inFlightQueryRef.current = q;
+      let raw: unknown = null;
+      let res: Response | null = null;
+      try {
+        res = await fetch(`/api/search?${params.toString()}`, { signal: controller.signal });
+        if (!res.ok) {
+          throw new Error(`${res.status} ${res.statusText || "Unknown error"}`);
+        }
+        raw = await res.json();
+      } catch {
+        const candidates = getBackendCandidates();
+        let lastErr: unknown = null;
+        for (const base of candidates) {
+          try {
+            const url = `${base.replace(/\/+$/,"")}/api/search?${params.toString()}`;
+            const resDirect = await fetch(url, { mode: "cors", signal: controller.signal });
+            if (!resDirect.ok) {
+              throw new Error(`${resDirect.status} ${resDirect.statusText || "Unknown error"}`);
+            }
+            raw = await resDirect.json();
+            lastErr = null;
+            break;
+          } catch (e) {
+            lastErr = e;
+            continue;
+          }
+        }
+        if (lastErr) {
+          throw lastErr;
+        }
+      }
       const data = mapItems(raw);
 
       if (myId === requestIdRef.current) {
@@ -84,18 +158,24 @@ export function useMedicineSearch() {
         setState((prev) => ({ ...prev, loading: false }));
         return;
       }
-      console.warn(err);
       setState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage(err),
       }));
     } finally {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (controllerRef.current) {
+        controllerRef.current = null;
+      }
       if (inFlightQueryRef.current === q) {
         inFlightQueryRef.current = null;
       }
     }
-  }, [state.query]);
+  }, [state.query, state.raw]);
 
   const clearSearch = useCallback(() => {
     lastQueryRef.current = null;
@@ -107,17 +187,19 @@ export function useMedicineSearch() {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    setState({
+    setState((prev) => ({
       query: "",
       loading: false,
       error: null,
       results: [],
-    });
+      raw: prev.raw,
+    }));
   }, []);
 
   return {
     state,
     setQuery,
+    setRaw,
     searchMedicines,
     clearSearch,
   };

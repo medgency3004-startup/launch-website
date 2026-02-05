@@ -38,21 +38,21 @@ function OfferCard({
     return "Select";
   }, [provider, price]);
   return (
-    <div className="relative rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-col md:flex-row items-center gap-5 md:gap-8 px-5 py-6 sm:px-8 sm:py-8">
+    <div className="relative rounded-xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md">
+      <div className="flex flex-col md:flex-row items-center gap-3 sm:gap-4 md:gap-6 px-3 py-3 sm:px-6 sm:py-6">
         
         {/* Medicine Name */}
-        <div className="w-full md:w-64 flex items-center gap-3 md:gap-4">
-          <Image src={providerLogo} alt={provider} className="h-10 w-10 md:h-12 md:w-12 object-contain" width={48} height={48} />
+        <div className="w-full md:w-64 flex items-center gap-2 md:gap-3">
+          <Image src={providerLogo} alt={provider} className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 object-contain" width={40} height={40} />
           <div className="flex flex-col">
-            <span className="text-sm md:text-base font-semibold text-slate-800">{logoAlt}</span>
-            <span className="text-[11px] md:text-xs text-slate-500">View details and pricing on {provider}</span>
+            <span className="text-[12px] sm:text-[13px] md:text-sm font-semibold text-slate-800 truncate max-w-[180px] sm:max-w-none">{logoAlt}</span>
+            <span className="text-[10px] sm:text-[11px] text-slate-500 break-words">View details and pricing on {provider}</span>
           </div>
         </div>
 
         {/* Price Info */}
         <div className="w-full md:flex-1 text-center md:text-left">
-          <div className="text-lg md:text-xl font-medium text-slate-600">
+          <div className="text-sm sm:text-base md:text-lg font-medium text-slate-600">
              Starting from ₹{price}
           </div>
         </div>
@@ -62,7 +62,7 @@ function OfferCard({
             href={href as string}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex justify-center md:justify-start items-center gap-2 rounded-xl bg-[#2d6f86] px-6 py-3 md:px-8 text-[14px] md:text-[15px] font-bold text-white shadow-sm transition-all hover:bg-[#1e4b5b] w-full md:w-auto"
+            className="group inline-flex justify-center md:justify-start items-center gap-2 rounded-lg bg-[#2d6f86] px-5 py-2.5 md:px-7 text-[12px] sm:text-[13px] md:text-[14px] font-bold text-white shadow-sm transition-all hover:bg-[#1e4b5b] w-full md:w-auto"
           >
             {buttonLabel}
             <span className="text-lg transition-transform group-hover:translate-x-1">
@@ -89,6 +89,10 @@ function SearchContent() {
   const [cheapestOnly, setCheapestOnly] = useState<boolean>(false);
 
   const verifiedProviders = useMemo(() => ["tata_1mg", "apollo", "truemeds"], []);
+  const allowedProviders = useMemo(
+    () => ["tata_1mg", "apollo", "truemeds", "pharmeasy", "medkart"],
+    []
+  );
 
   useEffect(() => {
     if (didInitialSearch.current) return;
@@ -99,15 +103,12 @@ function SearchContent() {
     }
   }, [initialQuery, setQuery, searchMedicines]);
 
-  const providerOptions = useMemo(
-    () => Array.from(new Set(state.results.map((r) => r.pharmacy))).sort(),
-    [state.results]
-  );
-
   const displayedResults = useMemo(() => {
     const min = minPrice ? Number(minPrice) : undefined;
     const max = maxPrice ? Number(maxPrice) : undefined;
+    const allowed = new Set(allowedProviders.map((p) => p.toLowerCase()));
     let list = state.results.filter((r) => {
+      if (!allowed.has(String(r.pharmacy).toLowerCase())) return false;
       const inProvider = selectedProviders.length === 0 ? true : selectedProviders.includes(r.pharmacy);
       const inMin = min === undefined ? true : r.price >= min;
       const inMax = max === undefined ? true : r.price <= max;
@@ -127,7 +128,7 @@ function SearchContent() {
       list = [cheapestItem];
     }
     return list;
-  }, [state.results, selectedProviders, minPrice, maxPrice, sort, cheapestOnly]);
+  }, [state.results, selectedProviders, minPrice, maxPrice, sort, cheapestOnly, allowedProviders]);
 
   const metrics = useMemo(() => {
     const prices = displayedResults.map((r) => r.price ?? 0).filter((p) => p > 0);
@@ -141,13 +142,49 @@ function SearchContent() {
     return { best, cheapest, verified };
   }, [displayedResults, verifiedProviders]);
 
+  const ensuredResults = useMemo(() => {
+    const present = new Set(displayedResults.map((r) => r.pharmacy.toLowerCase()));
+    const mustHave = ["pharmeasy", "medkart", "tata_1mg", "apollo", "truemeds"];
+    const fallbacks = mustHave
+      .filter((p) => !present.has(p))
+      .map((p, idx) => {
+        const q = state.query || initialQuery || "";
+        let url: string;
+        if (p === "pharmeasy") {
+          url = q ? `https://pharmeasy.in/search/all?name=${encodeURIComponent(q)}` : "https://pharmeasy.in/";
+        } else if (p === "medkart") {
+          url = q ? `https://www.medkart.in/search?search=${encodeURIComponent(q)}` : "https://www.medkart.in/";
+        } else if (p === "tata_1mg") {
+          url = q ? `https://www.1mg.com/search/all?name=${encodeURIComponent(q)}` : "https://www.1mg.com/";
+        } else if (p === "apollo") {
+          url = q ? `https://www.apollopharmacy.in/search?q=${encodeURIComponent(q)}` : "https://www.apollopharmacy.in/";
+        } else if (p === "truemeds") {
+          url = q ? `https://www.truemeds.in/search?query=${encodeURIComponent(q)}` : "https://www.truemeds.in/";
+        } else {
+          url = "/";
+        }
+        return {
+          id: `fallback-${p}-${idx}`,
+          name: q || "Search",
+          price: 0,
+          pharmacy: p,
+          url,
+        } as const;
+      });
+    return [...displayedResults, ...fallbacks];
+  }, [displayedResults, state.query, initialQuery]);
+
+  const providerOptions = useMemo(() => {
+    return [...allowedProviders].sort();
+  }, [allowedProviders]);
+
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-8 flex-1">
       {/* Search Bar Area */}
-      <div className="flex gap-4 mb-10">
+      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-10">
         <button
           onClick={() => router.push("/")}
-          className="rounded-xl border border-slate-200 px-6 py-4 text-slate-700 bg-white hover:bg-slate-50"
+          className="hidden sm:inline-flex rounded-xl border border-slate-200 px-5 py-3 text-slate-700 bg-white hover:bg-slate-50"
         >
           Home
         </button>
@@ -160,11 +197,13 @@ function SearchContent() {
               searchMedicines();
             }
           }}
-          className="flex-1 rounded-xl border border-slate-200 px-6 py-4 shadow-sm outline-none focus:ring-2 focus:ring-[#2d6f86]/20 text-slate-800"
+          placeholder="Search medicines"
+          aria-label="Search medicines"
+          className="flex-1 min-w-0 rounded-xl border border-slate-200 px-4 py-2 sm:px-5 sm:py-3 shadow-sm outline-none focus:ring-2 focus:ring-[#2d6f86]/20 text-slate-800 text-sm sm:text-base"
         />
         <button
           onClick={searchMedicines}
-          className="rounded-xl bg-[#0B2C3D] px-10 font-semibold text-white transition-all hover:bg-[#163a4d]"
+          className="rounded-xl bg-[#0B2C3D] px-4 py-2 sm:px-8 sm:py-3 font-semibold text-white transition-all hover:bg-[#163a4d] text-sm sm:text-base"
         >
           Search
         </button>
@@ -173,16 +212,11 @@ function SearchContent() {
             clearSearch();
             router.push("/search");
           }}
-          className="rounded-xl border border-slate-200 px-6 py-4 text-slate-700 bg-white hover:bg-slate-50"
+          className="rounded-xl border border-slate-200 px-4 py-2 sm:px-5 sm:py-3 text-slate-700 bg-white hover:bg-slate-50 text-sm sm:text-base"
         >
           Clear
         </button>
       </div>
-      {state.error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-          {state.error}
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         {/* Sidebar */}
@@ -276,11 +310,11 @@ function SearchContent() {
         </aside>
 
         {/* Results Content */}
-        <section className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-[#2d6f86] text-white shadow-lg rounded-2xl p-6 border border-slate-100">
+        <section className="space-y-6">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            <div className="bg-[#2d6f86] text-white shadow-lg rounded-xl p-4 sm:p-5 border border-slate-100">
               <div className="text-sm font-medium opacity-90">Best</div>
-              <div className="mt-2 text-4xl font-bold">
+              <div className="mt-1 text-2xl sm:text-3xl font-bold">
                 {metrics.best !== null ? `₹${metrics.best.toFixed(2)}` : "—"}
               </div>
               <div className="mt-1 text-xs opacity-70">Starting price today</div>
@@ -288,24 +322,24 @@ function SearchContent() {
             <button
               type="button"
               onClick={() => setCheapestOnly((v) => !v)}
-              className={`bg-white text-slate-800 shadow-sm rounded-2xl p-6 border border-slate-100 text-left ${cheapestOnly ? "ring-2 ring-[#2d6f86]" : ""}`}
+              className={`bg-white text-slate-800 shadow-sm rounded-xl p-4 sm:p-5 border border-slate-100 text-left ${cheapestOnly ? "ring-2 ring-[#2d6f86]" : ""}`}
             >
               <div className="text-sm font-medium opacity-90">Cheapest</div>
-              <div className="mt-2 text-4xl font-bold">
+              <div className="mt-1 text-2xl sm:text-3xl font-bold">
                 {metrics.cheapest !== null ? `₹${metrics.cheapest.toFixed(2)}` : "—"}
               </div>
               <div className="mt-1 text-xs opacity-70">Starting price today</div>
             </button>
-            <div className="bg-white text-slate-800 shadow-sm rounded-2xl p-6 border border-slate-100">
+            <div className="bg-white text-slate-800 shadow-sm rounded-xl p-4 sm:p-5 border border-slate-100">
               <div className="text-sm font-medium opacity-90">MedGency Verified</div>
-              <div className="mt-2 text-4xl font-bold">
+              <div className="mt-1 text-2xl sm:text-3xl font-bold">
                 {metrics.verified !== null ? `₹${metrics.verified.toFixed(2)}` : "—"}
               </div>
               <div className="mt-1 text-xs opacity-70">Starting price today</div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div className="text-sm text-slate-600">
               {state.loading ? "Searching…" : `${displayedResults.length} offers`}
             </div>
@@ -331,10 +365,12 @@ function SearchContent() {
               </>
             )}
             {state.error && (
-              <div className="text-red-600 font-medium">{state.error}</div>
+              <div className="text-slate-600 font-medium">
+                Some providers are temporarily unavailable. Showing links where possible.
+              </div>
             )}
             {!state.loading &&
-              displayedResults.map((med, idx) => (
+              ensuredResults.map((med, idx) => (
                 <OfferCard
                   key={idx}
                   logoAlt={med.name}
@@ -347,7 +383,7 @@ function SearchContent() {
                   href={med.url ?? undefined}
                 />
               ))}
-            {!state.loading && displayedResults.length === 0 && !state.error && (
+            {!state.loading && ensuredResults.length === 0 && !state.error && (
               <div className="text-slate-600 text-sm">No offers found. Try adjusting filters or a different query.</div>
             )}
           </div>

@@ -15,7 +15,10 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    const backend = process.env.BACKEND_URL ?? "http://3.109.214.112:8000";
+    const backend =
+      process.env.NEXT_PUBLIC_BACKEND_URL ??
+      process.env.BACKEND_URL ??
+      "http://3.109.214.112:8000";
     return [
       {
         source: "/api/:path*",
