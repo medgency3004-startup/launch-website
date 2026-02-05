@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    const backend = process.env.BACKEND_URL ?? "http://localhost:8001";
+    const backend = process.env.BACKEND_URL ?? "http://3.109.214.112:8000";
     return [
       {
         source: "/api/:path*",
