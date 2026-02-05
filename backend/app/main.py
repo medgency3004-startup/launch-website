@@ -14,7 +14,7 @@ allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
 if allowed_origins_env:
     allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
 else:
-    allowed_origins = ["http://localhost:3000"]
+    allowed_origins = ["https://medgency.vercel.app/"]
 
 app.add_middleware(
     CORSMiddleware,
