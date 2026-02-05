@@ -84,7 +84,6 @@ export default function HomePage() {
           <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="inline-flex gap-2 sm:gap-3 whitespace-nowrap pr-2">
               {[
-                "Paracetamol",
                 "Dolo 650",
                 "Crocin",
                 "Amoxicillin",
