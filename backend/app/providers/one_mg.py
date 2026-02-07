@@ -41,13 +41,12 @@ def search(medicine: str, city: str) -> List[Medicine]:
         "is_city_serviceable": "true",
     }
 
-
     try:
         r = session.get(BASE_URL, params=params, timeout=20)
     except requests.RequestException as e:
         print(f"❌ Network error: {e}")
         return []
-        
+
     if r.status_code != 200:
         print(f"❌ HTTP {r.status_code}")
         return []
@@ -60,11 +59,15 @@ def search(medicine: str, city: str) -> List[Medicine]:
     for item in data:
         prices = item.get("prices", {})
 
+        avaliable = item.get("available")
+        if not avaliable:
+            avaliable = False
+
         results.append(
             Medicine(
                 provider="tata_1mg",
                 medicine_name=item.get("name"),
-                available=item.get("available"),
+                available=avaliable,
                 price=parse_price(prices.get("discounted_price")),
                 mrp=parse_price(prices.get("mrp")),
                 url="https://www.1mg.com" + item.get("url", ""),
