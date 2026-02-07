@@ -59,15 +59,15 @@ def search(medicine: str, city: str) -> List[Medicine]:
     for item in data:
         prices = item.get("prices", {})
 
-        avaliable = item.get("available")
-        if not avaliable:
-            avaliable = False
+        available = item.get("available")
+        if not available:
+            continue
 
         results.append(
             Medicine(
                 provider="tata_1mg",
                 medicine_name=item.get("name"),
-                available=avaliable,
+                available=available,
                 price=parse_price(prices.get("discounted_price")),
                 mrp=parse_price(prices.get("mrp")),
                 url="https://www.1mg.com" + item.get("url", ""),
