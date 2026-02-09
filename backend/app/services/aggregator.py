@@ -67,4 +67,4 @@ def search_all(medicine: str, city: str = "DELHI") -> List[Medicine]:
     Return FILTERED + CHEAPEST medicine per provider.
     """
     results = search_all_raw(medicine, city)
-    return cheapest_per_provider(results, medicine)
+    return cheapest_per_provider(results)

@@ -36,7 +36,7 @@ def is_relevant(med: Medicine) -> bool:
     return True
 
 
-def cheapest_per_provider(results: List[Medicine], query: str) -> List[Medicine]:
+def cheapest_per_provider(results: List[Medicine]) -> List[Medicine]:
     """
     From all results, pick the cheapest relevant medicine per provider.
     Uses selling price if available, otherwise falls back to MRP.
