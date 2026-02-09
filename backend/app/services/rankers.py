@@ -2,21 +2,13 @@ from typing import List, Dict
 from app.models.medicine import Medicine
 
 
-def is_relevant(med: Medicine, query: str) -> bool:
+def is_relevant(med: Medicine) -> bool:
     """
     Decide whether a medicine is relevant to the user's query.
     This logic is QUERY-DRIVEN, not hard-coded to any brand.
     """
 
     name = (med.medicine_name or "").lower()
-    query = query.lower()
-
-    # break query into meaningful tokens
-    tokens = [t for t in query.split() if len(t) > 2]
-
-    # at least one query token must match the medicine name
-    if not any(token in name for token in tokens):
-        return False
 
     # Provider-specific noise handling
     if med.provider != "truemeds":
@@ -36,10 +28,7 @@ def is_relevant(med: Medicine, query: str) -> bool:
     return True
 
 
-def cheapest_per_provider(
-    results: List[Medicine],
-    query: str
-) -> List[Medicine]:
+def cheapest_per_provider(results: List[Medicine]) -> List[Medicine]:
     """
     From all results, pick the cheapest relevant medicine per provider.
     Uses selling price if available, otherwise falls back to MRP.
@@ -53,14 +42,12 @@ def cheapest_per_provider(
             continue
 
         # price normalization (TrueMeds fallback handled here)
-        effective_price = (
-            med.price if med.price is not None else med.mrp
-        )
+        effective_price = med.price if med.price is not None else med.mrp
         if effective_price is None:
             continue
 
         # relevance filtering
-        if not is_relevant(med, query):
+        if not is_relevant(med):
             continue
 
         current = best.get(med.provider)
@@ -68,9 +55,7 @@ def cheapest_per_provider(
             best[med.provider] = med
             continue
 
-        current_price = (
-            current.price if current.price is not None else current.mrp
-        )
+        current_price = current.price if current.price is not None else current.mrp
 
         if current_price is None or effective_price < current_price:
             best[med.provider] = med
