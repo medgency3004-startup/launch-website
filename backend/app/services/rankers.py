@@ -9,14 +9,6 @@ def is_relevant(med: Medicine) -> bool:
     """
 
     name = (med.medicine_name or "").lower()
-    # query = query.lower()
-    #
-    # # break query into meaningful tokens
-    # tokens = [t for t in query.split() if len(t) > 2]
-    #
-    # # at least one query token must match the medicine name
-    # if not any(token in name for token in tokens):
-    #     return False
 
     # Provider-specific noise handling
     if med.provider != "truemeds":
