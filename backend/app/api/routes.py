@@ -7,6 +7,7 @@ from app.services.aggregator import search_all, search_all_raw
 
 router = APIRouter(prefix="/api", tags=["Medicines"])
 
+
 @router.get("/search", response_model=List[MedicineOut])
 def search_medicine(
     q: str = Query(..., min_length=2),

@@ -2,7 +2,7 @@ from typing import List
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 import time
 from app.models.medicine import Medicine
-from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds
+from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds_pw
 from app.services.rankers import cheapest_per_provider
 
 
@@ -14,14 +14,16 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
         ("Truemeds", lambda: truemeds.search(medicine)),
         ("PharmEasy", lambda: pharmeasy.search(medicine)),
         ("Medkart", lambda: medkart.search(medicine)),
-        ("Netmeds", lambda: netmeds.search(medicine, city)),
+        ("Netmeds", lambda: netmeds_pw.search(medicine)),
     ]
+
     def safe_run(name: str, fn):
         try:
             return fn()
         except Exception as e:
             print(f"{name} failed:", e)
             return []
+
     executor = ThreadPoolExecutor(max_workers=len(providers))
     try:
         futures = {executor.submit(safe_run, name, fn) for (name, fn) in providers}
@@ -31,7 +33,9 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
             remaining = deadline - time.time()
             if remaining <= 0:
                 break
-            done, pending = wait(pending, timeout=remaining, return_when=FIRST_COMPLETED)
+            done, pending = wait(
+                pending, timeout=remaining, return_when=FIRST_COMPLETED
+            )
             for fut in done:
                 try:
                     chunk = fut.result()

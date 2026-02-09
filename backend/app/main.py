@@ -1,13 +1,9 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 import os
 
-app = FastAPI(
-    title="Medicine Price Aggregator",
-    version="1.0.0"
-)
+app = FastAPI(title="Medicine Price Aggregator", version="1.0.0")
 
 # CORS: allow localhost and Vercel deployments by default
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
@@ -26,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
 
 @app.get("/")
 def health():
