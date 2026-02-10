@@ -39,30 +39,31 @@ function OfferCard({
   }, [provider, price]);
   return (
     <div className="relative rounded-xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-col md:flex-row items-center gap-3 sm:gap-4 md:gap-6 px-3 py-3 sm:px-6 sm:py-6">
-        
-        {/* Medicine Name */}
-        <div className="w-full md:w-64 flex items-center gap-2 md:gap-3">
-          <Image src={providerLogo} alt={provider} className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 object-contain" width={40} height={40} />
-          <div className="flex flex-col">
-            <span className="text-[12px] sm:text-[13px] md:text-sm font-semibold text-slate-800 truncate max-w-[180px] sm:max-w-none">{logoAlt}</span>
-            <span className="text-[10px] sm:text-[11px] text-slate-500 break-words">View details and pricing on {provider}</span>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-4 py-4 sm:px-6 sm:py-5">
+
+        {/* Provider Logo + Medicine Name */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Image src={providerLogo} alt={provider} className="h-9 w-9 sm:h-10 sm:w-10 object-contain flex-shrink-0" width={40} height={40} />
+          <div className="flex flex-col min-w-0">
+            <span className="text-[13px] sm:text-sm font-semibold text-slate-800 line-clamp-2">{logoAlt}</span>
+            <span className="text-[11px] text-slate-500 truncate">View details and pricing on {provider}</span>
           </div>
         </div>
 
         {/* Price Info */}
-        <div className="w-full md:flex-1 text-center md:text-left">
-          <div className="text-sm sm:text-base md:text-lg font-medium text-slate-600">
-             Starting from ₹{price}
+        <div className="flex-shrink-0 text-left sm:text-center sm:min-w-[160px]">
+          <div className="text-sm sm:text-base md:text-lg font-medium text-slate-600 whitespace-nowrap">
+            Starting from ₹{price}
           </div>
         </div>
 
+        {/* Button */}
         {href ? (
           <a
             href={href as string}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex justify-center md:justify-start items-center gap-2 rounded-lg bg-[#2d6f86] px-5 py-2.5 md:px-7 text-[12px] sm:text-[13px] md:text-[14px] font-bold text-white shadow-sm transition-all hover:bg-[#1e4b5b] w-full md:w-auto"
+            className="group inline-flex justify-center items-center gap-2 rounded-lg bg-[#2d6f86] px-5 py-2.5 sm:px-7 text-[13px] sm:text-[14px] font-bold text-white shadow-sm transition-all hover:bg-[#1e4b5b] flex-shrink-0 w-full sm:w-auto"
           >
             {buttonLabel}
             <span className="text-lg transition-transform group-hover:translate-x-1">
@@ -124,7 +125,7 @@ function SearchContent() {
     if (cheapestOnly && list.length > 0) {
       const cheapestItem = list.reduce((prev, curr) =>
         (curr.price ?? 0) < (prev.price ?? 0) ? curr : prev
-      , list[0]);
+        , list[0]);
       list = [cheapestItem];
     }
     return list;
@@ -142,37 +143,7 @@ function SearchContent() {
     return { best, cheapest, verified };
   }, [displayedResults, verifiedProviders]);
 
-  const ensuredResults = useMemo(() => {
-    const present = new Set(displayedResults.map((r) => r.pharmacy.toLowerCase()));
-    const mustHave = ["pharmeasy", "medkart", "tata_1mg", "apollo", "truemeds"];
-    const fallbacks = mustHave
-      .filter((p) => !present.has(p))
-      .map((p, idx) => {
-        const q = state.query || initialQuery || "";
-        let url: string;
-        if (p === "pharmeasy") {
-          url = q ? `https://pharmeasy.in/search/all?name=${encodeURIComponent(q)}` : "https://pharmeasy.in/";
-        } else if (p === "medkart") {
-          url = q ? `https://www.medkart.in/search?search=${encodeURIComponent(q)}` : "https://www.medkart.in/";
-        } else if (p === "tata_1mg") {
-          url = q ? `https://www.1mg.com/search/all?name=${encodeURIComponent(q)}` : "https://www.1mg.com/";
-        } else if (p === "apollo") {
-          url = q ? `https://www.apollopharmacy.in/search?q=${encodeURIComponent(q)}` : "https://www.apollopharmacy.in/";
-        } else if (p === "truemeds") {
-          url = q ? `https://www.truemeds.in/search?query=${encodeURIComponent(q)}` : "https://www.truemeds.in/";
-        } else {
-          url = "/";
-        }
-        return {
-          id: `fallback-${p}-${idx}`,
-          name: q || "Search",
-          price: 0,
-          pharmacy: p,
-          url,
-        } as const;
-      });
-    return [...displayedResults, ...fallbacks];
-  }, [displayedResults, state.query, initialQuery]);
+
 
   const providerOptions = useMemo(() => {
     return [...allowedProviders].sort();
@@ -370,7 +341,7 @@ function SearchContent() {
               </div>
             )}
             {!state.loading &&
-              ensuredResults.map((med, idx) => (
+              displayedResults.map((med, idx) => (
                 <OfferCard
                   key={idx}
                   logoAlt={med.name}
@@ -383,7 +354,7 @@ function SearchContent() {
                   href={med.url ?? undefined}
                 />
               ))}
-            {!state.loading && ensuredResults.length === 0 && !state.error && (
+            {!state.loading && displayedResults.length === 0 && !state.error && (
               <div className="text-slate-600 text-sm">No offers found. Try adjusting filters or a different query.</div>
             )}
           </div>
