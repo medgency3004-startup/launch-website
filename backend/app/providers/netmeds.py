@@ -29,14 +29,14 @@ def search(medicine: str, city: str) -> List[Medicine]:
     session.headers.update(HEADERS)
 
     # Netmeds REQUIRES location cookies
-    session.cookies.set("pincode", "110001", domain=".netmeds.com")
-    session.cookies.set("city", "Delhi", domain=".netmeds.com")
+    session.cookies.set("pincode", "603203", domain=".netmeds.com")
+    session.cookies.set("city", "Chennai", domain=".netmeds.com")
 
     payload = {
         "search_term": medicine,
         "page_no": 1,
         "page_size": 20,
-        "pincode": "110001",  # Delhi
+        "pincode": "603203",  # Chennai
     }
 
     try:
@@ -65,22 +65,16 @@ def search(medicine: str, city: str) -> List[Medicine]:
             Medicine(
                 provider="netmeds",
                 sku_id=str(item.get("item_id")),
-                medicine_name=item.get("slug", "")
-                    .replace("-", " ")
-                    .title(),
+                medicine_name=item.get("slug", "").replace("-", " ").title(),
                 city=city,
-
                 available=item.get("is_serviceable", False)
-                          and item.get("quantity", 0) > 0,
+                and item.get("quantity", 0) > 0,
                 rx_required=False,
-
                 price=price.get("effective"),
                 mrp=price.get("marked"),
                 discount_percent=parse_discount(item.get("discount")),
-
                 eta_minutes=None,
                 delivery_date=parse_delivery_date(delivery.get("min")),
-
                 url=f"https://www.netmeds.com/prescriptions/{item.get('slug')}",
                 last_checked_at=datetime.utcnow(),
             )

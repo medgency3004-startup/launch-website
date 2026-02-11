@@ -2,11 +2,11 @@ from typing import List
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 import time
 from app.models.medicine import Medicine
-from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds
+from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds_pw
 from app.services.rankers import cheapest_per_provider
 
 
-def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
+def search_all_raw(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
     results: List[Medicine] = []
     providers = [
         ("1mg", lambda: one_mg.search(medicine, city)),
@@ -14,7 +14,7 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
         ("Truemeds", lambda: truemeds.search(medicine)),
         ("PharmEasy", lambda: pharmeasy.search(medicine)),
         ("Medkart", lambda: medkart.search(medicine)),
-        ("Netmeds", lambda: netmeds.search(medicine, city)),
+        ("Netmeds", lambda: netmeds_pw.search(medicine)),
     ]
 
     def safe_run(name: str, fn):
@@ -27,7 +27,7 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
     executor = ThreadPoolExecutor(max_workers=len(providers))
     try:
         futures = {executor.submit(safe_run, name, fn) for (name, fn) in providers}
-        deadline = time.time() + 4.0
+        deadline = time.time() + 5.0
         pending = set(futures)
         while pending:
             remaining = deadline - time.time()
@@ -48,7 +48,7 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
     return results
 
 
-def search_all(medicine: str, city: str = "DELHI") -> List[Medicine]:
+def search_all(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
     """
     Return FILTERED + CHEAPEST medicine per provider.
     """
