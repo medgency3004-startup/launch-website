@@ -1,116 +1,89 @@
-from playwright.sync_api import sync_playwright
+import json
 from typing import List
+import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from bs4 import BeautifulSoup
 from app.models.medicine import Medicine
-from app.utils.parsers import parse_price
 
-def _collect_product_urls(page) -> List[str]:
-    links = page.locator("a[href*='online-medicine-order']").all()
-    urls: List[str] = []
-    for link in links:
-        href = link.get_attribute("href")
-        if not href:
-            continue
-        if not href.startswith("http"):
-            href = "https://pharmeasy.in" + href
-        href = href.split("#")[0]
-        if "online-medicine-order/" in href and href not in urls:
-            urls.append(href)
-    return urls
+HEADERS = {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "origin": "https://www.apollopharmacy.in",
+    "referer": "https://www.apollopharmacy.in/",
+    "user-agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    ),
+    "x-app-os": "web",
+    "authorization": "Oeu324WMvfKOj5KMJh2Lkf00eW1",
+}
 
-def _scrape_product(page, url: str) -> Medicine:
-    page.goto(url, timeout=20000, wait_until="domcontentloaded")
-    page.wait_for_timeout(1000)
-    try:
-        name = page.locator("h1").inner_text()
-    except Exception:
-        name = None
-    try:
-        price_text = page.locator("span[class*='Price']").first.inner_text()
-    except Exception:
-        price_text = None
-    return Medicine(
-        provider="pharmeasy",
-        medicine_name=name or "",
-        available=True,
-        mrp=None,
-        price=parse_price(price_text),
-        url=url,
+
+def parse_medicine_from_page(page_url: str) -> Medicine:
+    resp = requests.get(page_url, headers=HEADERS, timeout=200)
+
+    if resp.status_code != 200:
+        return Medicine(
+            provider="pharmeasy",
+            medicine_name="",
+            available=False,
+            mrp=None,
+            price=None,
+            url=None,
+        )
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    json_matches = soup.find_all(name="script", attrs={"type": "application/ld+json"})
+    # the 0th one is trash
+    raw = json_matches[1].contents[0]
+    data = json.loads(str(raw))
+    is_available = (
+        True if "InStock" in data.get("offers", {}).get("availability", "") else False
     )
 
-def search(medicine: str) -> List[Medicine]:
+    return Medicine(
+        provider="pharmeasy",
+        medicine_name=data.get("name"),
+        available=is_available,
+        price=data.get("offers").get("price"),
+        url=data.get("url"),
+        mrp=data.get("offers").get("price"),
+    )
+
+
+def search(medicine: str):
+    search_results = f"https://pharmeasy.in/search/all?name={medicine}"
+    resp = requests.get(search_results, headers=HEADERS, timeout=200)
     results: List[Medicine] = []
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(**p.devices["iPhone 13"])
-            page = context.new_page()
-            try:
-                page.goto(
-                    f"https://pharmeasy.in/search/all?name={medicine}",
-                    timeout=10000,
-                    wait_until="domcontentloaded",
-                )
-            except Exception:
-                results.append(
-                    Medicine(
-                        provider="pharmeasy",
-                        medicine_name=medicine,
-                        available=True,
-                        mrp=None,
-                        price=None,
-                        url=f"https://pharmeasy.in/search/all?name={medicine}",
-                    )
-                )
-                browser.close()
-                return results
-            try:
-                page.wait_for_selector("a[href*='online-medicine-order']", timeout=1500)
-            except Exception:
-                pass
-            urls = _collect_product_urls(page)
-            if not urls:
-                results.append(
-                    Medicine(
-                        provider="pharmeasy",
-                        medicine_name=medicine,
-                        available=True,
-                        mrp=None,
-                        price=None,
-                        url=f"https://pharmeasy.in/search/all?name={medicine}",
-                    )
-                )
-                browser.close()
-                return results
-            for url in urls[:10]:
-                try:
-                    slug = url.split("online-medicine-order/")[-1].split("/")[0]
-                    name = slug.replace("-", " ").title() if slug else None
-                    results.append(
-                        Medicine(
-                            provider="pharmeasy",
-                            medicine_name=name or "",
-                            available=True,
-                            mrp=None,
-                            price=None,
-                            url=url,
-                        )
-                    )
-                except Exception:
-                    pass
-            browser.close()
-    except Exception as e:
-        print("PharmEasy failed:", e)
-        try:
-            results.append(
-                Medicine(
-                    provider="pharmeasy",
-                    medicine_name=medicine,
-                    available=True,
-                    mrp=None,
-                    price=None,
-                    url=f"https://pharmeasy.in/search/all?name={medicine}",
-                )
-            )
-        except Exception:
-            pass
+
+    if resp.status_code != 200:
+        print(f"❌ Pharmeasy HTTP {resp.status_code}")
+        print(resp.text[:300])
+        return []
+
+    raw_html = resp.text
+
+    soup = BeautifulSoup(raw_html, "html.parser")
+    products = soup.find_all(
+        name="a",
+        class_="ProductCard_medicineUnitWrapper__rgDfO ProductCard_defaultWrapper__h4yf3",
+        # TODO: make this more automatic
+    )
+
+    product_page_urls = [
+        f"https://pharmeasy.in{product_raw.get('href')}" for product_raw in products
+    ]
+
+    with ThreadPoolExecutor(max_workers=len(product_page_urls)) as executer:
+        futures = [
+            executer.submit(parse_medicine_from_page, page_url)
+            for page_url in product_page_urls
+        ]
+
+        for future in as_completed(futures):
+            result = future.result()
+            results.append(result)
+
+    print(f"Pharmeasy gave {len(results)} items")
     return results

@@ -2,7 +2,7 @@ from typing import List
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 import time
 from app.models.medicine import Medicine
-from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds_pw
+from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds
 from app.services.rankers import cheapest_per_provider
 
 
@@ -14,7 +14,7 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
         ("Truemeds", lambda: truemeds.search(medicine)),
         ("PharmEasy", lambda: pharmeasy.search(medicine)),
         ("Medkart", lambda: medkart.search(medicine)),
-        ("Netmeds", lambda: netmeds_pw.search(medicine)),
+        ("Netmeds", lambda: netmeds.search(medicine, city)),
     ]
 
     def safe_run(name: str, fn):
@@ -45,20 +45,6 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
                     pass
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
-    try:
-        if not any(getattr(item, "provider", "") == "pharmeasy" for item in results):
-            results.append(
-                Medicine(
-                    provider="pharmeasy",
-                    medicine_name=medicine,
-                    available=True,
-                    mrp=None,
-                    price=None,
-                    url=f"https://pharmeasy.in/search/all?name={medicine}",
-                )
-            )
-    except Exception:
-        pass
     return results
 
 
