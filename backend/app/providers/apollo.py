@@ -28,7 +28,7 @@ def search(medicine: str) -> List[Medicine]:
         "productsPerPage": 24,
         "selSortBy": "relevance",
         "filters": [],
-        "pincode": ""
+        "pincode": "603203",
     }
 
     resp = requests.post(
@@ -46,12 +46,7 @@ def search(medicine: str) -> List[Medicine]:
     data = resp.json()
 
     # ✅ CORRECT PATH
-    products = (
-        data
-        .get("data", {})
-        .get("productDetails", {})
-        .get("products", [])
-    )
+    products = data.get("data", {}).get("productDetails", {}).get("products", [])
 
     results: List[Medicine] = []
 
@@ -63,7 +58,9 @@ def search(medicine: str) -> List[Medicine]:
         url_key = item.get("urlKey")
 
         # Build product URL path
-        path_prefix = "otc" if str(sub_category).strip().lower() == "otc" else "medicine"
+        path_prefix = (
+            "otc" if str(sub_category).strip().lower() == "otc" else "medicine"
+        )
         product_url = (
             f"https://www.apollopharmacy.in/{path_prefix}/{url_key}"
             if url_key
@@ -73,7 +70,7 @@ def search(medicine: str) -> List[Medicine]:
         results.append(
             Medicine(
                 provider="apollo",
-                medicine_name=item.get("name"),
+                medicine_name=item.get("name", ""),
                 available=item.get("status") == "in-stock",
                 mrp=parse_price(item.get("price")),
                 price=parse_price(item.get("specialPrice")),

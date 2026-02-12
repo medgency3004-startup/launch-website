@@ -6,7 +6,7 @@ from app.providers import one_mg, apollo, truemeds, pharmeasy, medkart, netmeds_
 from app.services.rankers import cheapest_per_provider
 
 
-def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
+def search_all_raw(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
     results: List[Medicine] = []
     providers = [
         ("1mg", lambda: one_mg.search(medicine, city)),
@@ -27,7 +27,7 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
     executor = ThreadPoolExecutor(max_workers=len(providers))
     try:
         futures = {executor.submit(safe_run, name, fn) for (name, fn) in providers}
-        deadline = time.time() + 4.0
+        deadline = time.time() + 5.0
         pending = set(futures)
         while pending:
             remaining = deadline - time.time()
@@ -45,24 +45,10 @@ def search_all_raw(medicine: str, city: str = "DELHI") -> List[Medicine]:
                     pass
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
-    try:
-        if not any(getattr(item, "provider", "") == "pharmeasy" for item in results):
-            results.append(
-                Medicine(
-                    provider="pharmeasy",
-                    medicine_name=medicine,
-                    available=True,
-                    mrp=None,
-                    price=None,
-                    url=f"https://pharmeasy.in/search/all?name={medicine}",
-                )
-            )
-    except Exception:
-        pass
     return results
 
 
-def search_all(medicine: str, city: str = "DELHI") -> List[Medicine]:
+def search_all(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
     """
     Return FILTERED + CHEAPEST medicine per provider.
     """
