@@ -4,7 +4,6 @@ import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from bs4 import BeautifulSoup
 from app.models.medicine import Medicine
-from rich import print
 
 HEADERS = {
     "accept": "application/json",
@@ -152,6 +151,5 @@ def search(medicine: str):
             result = future.result()
             results.append(result)
 
-    print(results)
     print(f"Pharmeasy gave {len(results)} items")
     return results
