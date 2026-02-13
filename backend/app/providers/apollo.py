@@ -28,7 +28,11 @@ def search(medicine: str) -> List[Medicine]:
         "productsPerPage": 24,
         "selSortBy": "relevance",
         "filters": [],
+<<<<<<< HEAD
         "pincode": "603203",
+=======
+        "pincode": ""
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
     }
 
     resp = requests.post(
@@ -46,7 +50,16 @@ def search(medicine: str) -> List[Medicine]:
     data = resp.json()
 
     # ✅ CORRECT PATH
+<<<<<<< HEAD
     products = data.get("data", {}).get("productDetails", {}).get("products", [])
+=======
+    products = (
+        data
+        .get("data", {})
+        .get("productDetails", {})
+        .get("products", [])
+    )
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
 
     results: List[Medicine] = []
 
@@ -54,6 +67,7 @@ def search(medicine: str) -> List[Medicine]:
         if not isinstance(item, dict):
             continue
 
+<<<<<<< HEAD
         sub_category = (item.get("subCategory") or "") or ""
         url_key = item.get("urlKey")
 
@@ -75,6 +89,17 @@ def search(medicine: str) -> List[Medicine]:
                 mrp=parse_price(item.get("price")),
                 price=parse_price(item.get("specialPrice")),
                 url=product_url,
+=======
+        results.append(
+            Medicine(
+                provider="apollo",
+                medicine_name=item.get("name"),
+                available=item.get("status") == "in-stock",
+                mrp=parse_price(item.get("price")),
+                price=parse_price(item.get("specialPrice")),
+                url="https://www.apollopharmacy.in/"
+                    + item.get("urlKey", ""),
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
             )
         )
 

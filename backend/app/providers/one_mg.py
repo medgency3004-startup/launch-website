@@ -41,12 +41,20 @@ def search(medicine: str, city: str) -> List[Medicine]:
         "is_city_serviceable": "true",
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
     try:
         r = session.get(BASE_URL, params=params, timeout=20)
     except requests.RequestException as e:
         print(f"❌ Network error: {e}")
         return []
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
     if r.status_code != 200:
         print(f"❌ HTTP {r.status_code}")
         return []
@@ -66,9 +74,13 @@ def search(medicine: str, city: str) -> List[Medicine]:
                 available=item.get("available"),
                 price=parse_price(prices.get("discounted_price")),
                 mrp=parse_price(prices.get("mrp")),
+<<<<<<< HEAD
                 url=(
                     "https://www.1mg.com" + item.get("url") if item.get("url") else None
                 ),
+=======
+                url="https://www.1mg.com" + item.get("url", ""),
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
             )
         )
     print(f"Tata 1mg gave {len(data)} items")

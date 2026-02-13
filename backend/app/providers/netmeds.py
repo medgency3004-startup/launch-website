@@ -29,14 +29,23 @@ def search(medicine: str, city: str) -> List[Medicine]:
     session.headers.update(HEADERS)
 
     # Netmeds REQUIRES location cookies
+<<<<<<< HEAD
     session.cookies.set("pincode", "603203", domain=".netmeds.com")
     session.cookies.set("city", "Chennai", domain=".netmeds.com")
+=======
+    session.cookies.set("pincode", "110001", domain=".netmeds.com")
+    session.cookies.set("city", "Delhi", domain=".netmeds.com")
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
 
     payload = {
         "search_term": medicine,
         "page_no": 1,
         "page_size": 20,
+<<<<<<< HEAD
         "pincode": "603203",  # Chennai
+=======
+        "pincode": "110001",  # Delhi
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
     }
 
     try:
@@ -65,6 +74,7 @@ def search(medicine: str, city: str) -> List[Medicine]:
             Medicine(
                 provider="netmeds",
                 sku_id=str(item.get("item_id")),
+<<<<<<< HEAD
                 medicine_name=item.get("slug", "").replace("-", " ").title(),
                 city=city,
                 available=item.get("is_serviceable", False)
@@ -75,6 +85,24 @@ def search(medicine: str, city: str) -> List[Medicine]:
                 discount_percent=parse_discount(item.get("discount")),
                 eta_minutes=None,
                 delivery_date=parse_delivery_date(delivery.get("min")),
+=======
+                medicine_name=item.get("slug", "")
+                    .replace("-", " ")
+                    .title(),
+                city=city,
+
+                available=item.get("is_serviceable", False)
+                          and item.get("quantity", 0) > 0,
+                rx_required=False,
+
+                price=price.get("effective"),
+                mrp=price.get("marked"),
+                discount_percent=parse_discount(item.get("discount")),
+
+                eta_minutes=None,
+                delivery_date=parse_delivery_date(delivery.get("min")),
+
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
                 url=f"https://www.netmeds.com/prescriptions/{item.get('slug')}",
                 last_checked_at=datetime.utcnow(),
             )

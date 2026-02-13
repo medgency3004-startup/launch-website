@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+<<<<<<< HEAD
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 import os
@@ -23,11 +24,21 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+=======
+from app.api.routes import router
+
+app = FastAPI(
+    title="Medicine Price Aggregator",
+    version="1.0.0"
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
 )
 
 app.include_router(router)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
 @app.get("/")
 def health():
     return {"status": "running"}

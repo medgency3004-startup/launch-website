@@ -1,5 +1,8 @@
 import time
+<<<<<<< HEAD
 import re
+=======
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
 import requests
 from typing import List
 
@@ -85,6 +88,7 @@ def search(
                 mrp=mrp,
                 price=selling_price if selling_price is not None else mrp,
                 url=(
+<<<<<<< HEAD
                     "https://www.truemeds.in/medicine/"
                     + re.sub(
                         r"[^a-z0-9]+",
@@ -94,6 +98,11 @@ def search(
                     + "-"
                     + product.get("productCode")
                     if product.get("productCode") and product.get("skuName")
+=======
+                    "https://www.truemeds.in/product/"
+                    + product.get("productCode")
+                    if product.get("productCode")
+>>>>>>> 0ff568fcb2993a8f7efeb3f9c6344b92dac8fd24
                     else None
                 ),
             )
