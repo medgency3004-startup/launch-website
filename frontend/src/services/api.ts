@@ -3,7 +3,7 @@ import { Medicine } from "../types";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   process.env.BACKEND_URL ||
-  "http://35.154.103.140";
+  "https://api.medgency.in";
 
 export class ApiError extends Error {
   constructor(public status: number, public statusText: string) {

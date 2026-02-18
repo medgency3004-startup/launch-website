@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     const backend =
-      "http://35.154.103.140/docs";
+      "https://api.medgency.in";
     return [
       {
         source: "/api/:path*",
