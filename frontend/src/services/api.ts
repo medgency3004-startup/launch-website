@@ -3,7 +3,7 @@ import { Medicine } from "../types";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   process.env.BACKEND_URL ||
-  "http://localhost:8000";
+  "http://35.154.103.140";
 
 export class ApiError extends Error {
   constructor(public status: number, public statusText: string) {
@@ -14,7 +14,7 @@ export class ApiError extends Error {
 
 export async function fetchMedicines(
   query: string,
-  city: string = "DELHI",
+  city: string = "CHENNAI",
   raw: boolean = false,
   signal?: AbortSignal
 ): Promise<any[]> {
@@ -25,7 +25,7 @@ export async function fetchMedicines(
   // However, next.config.ts sets up a rewrite for /api -> BACKEND_URL/api
   // using the same env vars.
   // To strictly follow "fetch it from [.env]", we can construct the full URL.
-  
+
   // Clean trailing slash from BACKEND_URL if present
   const baseUrl = BACKEND_URL.replace(/\/+$/, "");
   const url = `${baseUrl}/api/search?${params.toString()}`;
@@ -46,7 +46,7 @@ export async function fetchMedicines(
     // So if the direct fetch fails, it might be CORS.
     // Let's try to just re-throw for now, or we could implement a fallback to `/api/search`
     // which Next.js rewrites to the backend.
-    
+
     // Let's rely on the direct fetch first as per instructions.
     throw error;
   }

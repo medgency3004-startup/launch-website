@@ -80,7 +80,7 @@ export function useMedicineSearch() {
 
       const myId = ++requestIdRef.current;
 
-      const rawData = await fetchMedicines(q, "DELHI", state.raw, controller.signal);
+      const rawData = await fetchMedicines(q, "CHENNAI", state.raw, controller.signal);
       const data = mapItems(rawData);
 
       if (myId === requestIdRef.current) {
