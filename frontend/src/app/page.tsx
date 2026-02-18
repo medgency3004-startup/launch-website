@@ -69,7 +69,7 @@ export default function HomePage() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search medicines (e.g., Paracetamol)..."
-              className="flex-1 px-5 sm:px-6 py-3 sm:py-4 rounded-l-full outline-none text-[#0B2C3D] placeholder:text-slate-500"
+              className="flex-1 px-5 sm:px-6 py-3 sm:py-4 rounded-l-full outline-none text-[#0B2C3D] placeholder:text-slate-500 bg-white"
             />
             <button
               onClick={handleSearch}

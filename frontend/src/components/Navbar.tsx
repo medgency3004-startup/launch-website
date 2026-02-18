@@ -13,19 +13,19 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-white/90 backdrop-blur border-b border-gray-100">
+    <nav className="w-full bg-white backdrop-blur border-b border-gray-100">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-12">
-        <div className="flex h-14 sm:h-16 md:h-20 items-center justify-between">
+        <div className="flex h-20 sm:h-24 md:h-28 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" aria-label="Go to home">
               <Image
                 src={logo}
-                alt="Medgency"
-                width={300}
-                height={75}
+                alt="Doze by Medgency"
+                width={360}
+                height={90}
                 priority
-                className="h-8 w-auto sm:h-10 md:h-16 cursor-pointer"
-                sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, 300px"
+                className="h-12 w-auto sm:h-18 md:h-24 cursor-pointer"
+                sizes="(max-width: 640px) 180px, (max-width: 768px) 240px, 360px"
               />
             </Link>
           </div>

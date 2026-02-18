@@ -170,7 +170,7 @@ function SearchContent() {
           }}
           placeholder="Search medicines"
           aria-label="Search medicines"
-          className="flex-1 min-w-0 rounded-xl border border-slate-200 px-4 py-2 sm:px-5 sm:py-3 shadow-sm outline-none focus:ring-2 focus:ring-[#2d6f86]/20 text-slate-800 text-sm sm:text-base"
+          className="flex-1 min-w-0 rounded-xl border border-slate-200 px-4 py-2 sm:px-5 sm:py-3 shadow-sm outline-none focus:ring-2 focus:ring-[#2d6f86]/20 text-slate-800 text-sm sm:text-base bg-white"
         />
         <button
           onClick={searchMedicines}
