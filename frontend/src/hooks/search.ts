@@ -35,7 +35,7 @@ export function useMedicineSearch() {
     loading: false,
     error: null,
     results: [],
-    raw: false,
+    raw: true,
   });
   const lastQueryRef = useRef<string | null>(null);
   const requestIdRef = useRef<number>(0);
