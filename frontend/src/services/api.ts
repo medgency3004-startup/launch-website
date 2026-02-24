@@ -1,7 +1,7 @@
 const BACKEND_URL = (
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   process.env.BACKEND_URL ||
-  "https://api.medgency.in"
+  "http://localhost:8000"       // ← http:// required for local dev
 ).replace(/\/+$/, "");
 
 export class ApiError extends Error {

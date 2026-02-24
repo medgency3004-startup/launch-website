@@ -56,7 +56,7 @@ export function useSearch() {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const raw = await fetchMedicines(q, "CHENNAI", state.raw, controller.signal);
+        const raw = await fetchMedicines(q, "LUCKNOW", state.raw, controller.signal);
         const results = mapMedicineItems(raw);
 
         if (myId === requestIdRef.current) {

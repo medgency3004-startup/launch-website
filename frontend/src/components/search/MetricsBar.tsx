@@ -14,12 +14,7 @@ export function MetricsBar({ metrics, cheapestOnly, onToggleCheapest }: MetricsB
     const fmt = (v: number | null) => (v !== null ? `₹${v.toFixed(2)}` : "—");
 
     return (
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
-            <div className="bg-[#2d6f86] text-white shadow-lg rounded-xl p-4 sm:p-5 border border-slate-100">
-                <div className="text-sm font-medium opacity-90">Best</div>
-                <div className="mt-1 text-2xl sm:text-3xl font-bold">{fmt(metrics.best)}</div>
-                <div className="mt-1 text-xs opacity-70">Starting price today</div>
-            </div>
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
 
             <button
                 type="button"
