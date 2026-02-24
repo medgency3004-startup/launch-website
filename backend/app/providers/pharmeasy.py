@@ -1,32 +1,22 @@
 import json
-from typing import List
+import logging
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List
+
 from bs4 import BeautifulSoup
 from app.models.medicine import Medicine
+from app.providers.base import PHARMEASY_HEADERS, TIMEOUT
 
-HEADERS = {
-    "accept": "application/json",
-    "content-type": "application/json",
-    "origin": "https://www.apollopharmacy.in",
-    "referer": "https://www.apollopharmacy.in/",
-    "user-agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/122.0.0.0 Safari/537.36"
-    ),
-    "x-app-os": "web",
-    "authorization": "Oeu324WMvfKOj5KMJh2Lkf00eW1",
-}
+logger = logging.getLogger(__name__)
 
-REQUEST_TIMEOUT_SECONDS = 4
-MAX_WORKERS = 16
+MAX_RESULTS = 5
+MAX_WORKERS = MAX_RESULTS
 
 
-def _parse_medicine_from_page(page_url: str) -> Medicine:
-    resp = requests.get(page_url, headers=HEADERS, timeout=REQUEST_TIMEOUT_SECONDS)
-
-    dummny_val = Medicine(
+def _parse_product_page(page_url: str) -> Medicine:
+    """Scrapes a single PharmEasy product page for price and availability."""
+    fallback = Medicine(
         provider="pharmeasy",
         medicine_name="",
         available=False,
@@ -35,121 +25,110 @@ def _parse_medicine_from_page(page_url: str) -> Medicine:
         url=page_url,
     )
 
+    try:
+        resp = requests.get(page_url, headers=PHARMEASY_HEADERS, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        logger.warning("PharmEasy page fetch failed (%s): %s", page_url, e)
+        return fallback
+
     if resp.status_code != 200:
-        return dummny_val
+        return fallback
 
     soup = BeautifulSoup(resp.text, "html.parser")
-    json_matches = soup.find_all(name="script", attrs={"type": "application/ld+json"})
+    scripts = soup.find_all("script", attrs={"type": "application/ld+json"})
 
-    # PharmEasy pages can change layout; be defensive about JSON-LD structure.
-    data = None
-    for script in json_matches:
-        # Prefer the first JSON-LD block that parses and looks like a product.
-        raw = None
-        if script.string:
-            raw = script.string
-        elif script.contents:
-            raw = script.contents[0]
-
+    product_data = None
+    for script in scripts:
+        raw = script.string or (script.contents[0] if script.contents else None)
         if not raw:
             continue
 
         try:
-            prodcut_json = json.loads(str(raw))
-        except Exception:
+            parsed = json.loads(str(raw))
+        except (json.JSONDecodeError, ValueError):
             continue
 
         # JSON-LD may be a list or a single dict
-        if isinstance(prodcut_json, list):
-            product_obj = None
-            for item in prodcut_json:
-                if isinstance(item, dict) and (
-                    item.get("name") or item.get("@type") == "Product"
-                ):
-                    product_obj = item
-                    break
-            if not product_obj:
-                continue
-            prodcut_json = product_obj
+        if isinstance(parsed, list):
+            parsed = next(
+                (
+                    item
+                    for item in parsed
+                    if isinstance(item, dict)
+                    and (item.get("name") or item.get("@type") == "Product")
+                ),
+                None,
+            )
 
-        if not isinstance(prodcut_json, dict):
+        if not isinstance(parsed, dict):
             continue
 
-        # Require at least a name or offers to consider this valid
-        if prodcut_json.get("name") or prodcut_json.get("offers"):
-            data = prodcut_json
+        if parsed.get("name") or parsed.get("offers"):
+            product_data = parsed
             break
 
-    if not data:
-        # Could not find a usable JSON-LD script; treat as unavailable.
-        return Medicine(
-            provider="pharmeasy",
-            medicine_name="",
-            available=False,
-            mrp=None,
-            price=None,
-            url=page_url,
-        )
+    if not product_data:
+        return fallback
 
-    offers = data.get("offers") or {}
-    # offers can sometimes be a list in JSON-LD
+    offers = product_data.get("offers") or {}
     if isinstance(offers, list):
         offers = offers[0] if offers else {}
     if not isinstance(offers, dict):
         offers = {}
 
-    availability = offers.get("availability", "") if isinstance(offers, dict) else ""
-    is_available = True if "InStock" in availability else False
+    availability = offers.get("availability", "")
+    is_available = "InStock" in availability
 
     return Medicine(
         provider="pharmeasy",
-        medicine_name=data.get("name") or "",
+        medicine_name=product_data.get("name") or "",
         available=is_available,
-        price=offers.get("price"),
-        url=data.get("url") or page_url,
         mrp=offers.get("price"),
+        price=offers.get("price"),
+        url=product_data.get("url") or page_url,
     )
 
 
-def search(medicine: str):
-    search_results = f"https://pharmeasy.in/search/all?name={medicine}"
-    resp = requests.get(
-        search_results, headers=HEADERS, timeout=REQUEST_TIMEOUT_SECONDS
-    )
-    results: List[Medicine] = []
+def search(medicine: str) -> List[Medicine]:
+    search_url = f"https://pharmeasy.in/search/all?name={medicine}"
+
+    try:
+        resp = requests.get(search_url, headers=PHARMEASY_HEADERS, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        logger.error("PharmEasy search network error: %s", e)
+        return []
 
     if resp.status_code != 200:
-        print(f"❌ Pharmeasy HTTP {resp.status_code}")
-        print(resp.text[:300])
+        logger.warning("PharmEasy HTTP %s", resp.status_code)
         return []
 
-    raw_html = resp.text
-
-    soup = BeautifulSoup(raw_html, "html.parser")
-    products = soup.find_all(
-        name="a",
+    soup = BeautifulSoup(resp.text, "html.parser")
+    product_anchors = soup.find_all(
+        "a",
         class_="ProductCard_medicineUnitWrapper__rgDfO ProductCard_defaultWrapper__h4yf3",
-        # TODO: make this more automatic
     )
 
-    product_page_urls = [
-        f"https://pharmeasy.in{product_raw.get('href')}" for product_raw in products
+    product_urls = [
+        f"https://pharmeasy.in{anchor.get('href')}"
+        for anchor in product_anchors
+        if anchor.get("href")
     ]
 
-    if not product_page_urls:
+    if not product_urls:
         return []
 
-    max_workers = min(len(product_page_urls), MAX_WORKERS)
+    product_urls = product_urls[:MAX_RESULTS]
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executer:
-        futures = [
-            executer.submit(_parse_medicine_from_page, page_url)
-            for page_url in product_page_urls
-        ]
+    results: List[Medicine] = []
+    workers = min(len(product_urls), MAX_WORKERS)
 
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [executor.submit(_parse_product_page, url) for url in product_urls]
         for future in as_completed(futures):
-            result = future.result()
-            results.append(result)
+            try:
+                results.append(future.result())
+            except Exception as e:
+                logger.warning("PharmEasy page parse error: %s", e)
 
-    print(f"Pharmeasy gave {len(results)} items")
+    logger.info("PharmEasy returned %d items", len(results))
     return results
