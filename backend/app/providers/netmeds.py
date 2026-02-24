@@ -12,20 +12,18 @@ NETMEDS_API = (
     "catalog/v1.0/products/serviceability"
 )
 DEFAULT_PINCODE = "603203"
-DEFAULT_CITY = "Chennai"
 
 
-def search(medicine: str) -> List[Medicine]:
+def search(medicine: str, pincode: str = DEFAULT_PINCODE) -> List[Medicine]:
     session = requests.Session()
     session.headers.update(NETMEDS_HEADERS)
-    session.cookies.set("pincode", DEFAULT_PINCODE, domain=".netmeds.com")
-    session.cookies.set("city", DEFAULT_CITY, domain=".netmeds.com")
+    session.cookies.set("pincode", pincode, domain=".netmeds.com")
 
     payload = {
         "search_term": medicine,
         "page_no": 1,
         "page_size": 20,
-        "pincode": DEFAULT_PINCODE,
+        "pincode": pincode,
     }
 
     try:
@@ -44,7 +42,6 @@ def search(medicine: str) -> List[Medicine]:
     for item in items:
         price_data = item.get("price", {})
         slug = item.get("slug", "")
-
         results.append(
             Medicine(
                 provider="netmeds",

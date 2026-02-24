@@ -4,18 +4,23 @@ from typing import List
 
 from app.models.medicine import Medicine
 from app.utils.parsers import parse_price
+from app.utils.location import get_city
 from app.providers.base import ONE_MG_HEADERS, TIMEOUT
 
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://www.1mg.com/pwa-api/api/v4/search/all"
+DEFAULT_PINCODE = "603203"
 
 
-def search(medicine: str, city: str) -> List[Medicine]:
+def search(medicine: str, pincode: str = DEFAULT_PINCODE) -> List[Medicine]:
+    # 1mg's API requires city name, not pincode
+    city = get_city(pincode)
+
     session = requests.Session()
     session.headers.update(ONE_MG_HEADERS)
     session.headers["x-city"] = city
-    session.cookies.update({"city": city})
+    session.cookies.update({"city": city, "pincode": pincode})
 
     params = {
         "q": medicine,
@@ -40,15 +45,12 @@ def search(medicine: str, city: str) -> List[Medicine]:
 
     data = resp.json().get("data", {}).get("search_results", [])
     if not data:
-        logger.info("1mg returned no results")
         return []
 
     results: List[Medicine] = []
-
     for item in data:
         prices = item.get("prices", {})
         url = item.get("url")
-
         results.append(
             Medicine(
                 provider="tata_1mg",

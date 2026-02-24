@@ -12,14 +12,14 @@ APOLLO_SEARCH_API = "https://search.apollo247.com/v4/fullSearch"
 DEFAULT_PINCODE = "603203"
 
 
-def search(medicine: str) -> List[Medicine]:
+def search(medicine: str, pincode: str = DEFAULT_PINCODE) -> List[Medicine]:
     payload = {
         "query": medicine,
         "page": 1,
         "productsPerPage": 24,
         "selSortBy": "relevance",
         "filters": [],
-        "pincode": DEFAULT_PINCODE,
+        "pincode": pincode,
     }
 
     try:
@@ -45,20 +45,12 @@ def search(medicine: str) -> List[Medicine]:
     )
 
     results: List[Medicine] = []
-
     for item in products:
         if not isinstance(item, dict):
             continue
-
         sub_category = (item.get("subCategory") or "").strip().lower()
         url_key = item.get("urlKey")
         path_prefix = "otc" if sub_category == "otc" else "medicine"
-        product_url = (
-            f"https://www.apollopharmacy.in/{path_prefix}/{url_key}"
-            if url_key
-            else None
-        )
-
         results.append(
             Medicine(
                 provider="apollo",
@@ -66,7 +58,7 @@ def search(medicine: str) -> List[Medicine]:
                 available=item.get("status") == "in-stock",
                 mrp=parse_price(item.get("price")),
                 price=parse_price(item.get("specialPrice")),
-                url=product_url,
+                url=f"https://www.apollopharmacy.in/{path_prefix}/{url_key}" if url_key else None,
             )
         )
 

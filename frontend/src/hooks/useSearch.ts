@@ -4,6 +4,7 @@ import { fetchMedicines } from "@/services/api";
 import { mapMedicineItems, isAbortError } from "@/lib/medicine";
 
 const SEARCH_TIMEOUT_MS = 10_000;
+const DEFAULT_PINCODE = "603203"; // Chennai fallback
 
 export function useSearch() {
   const [state, setState] = useState<SearchState>({
@@ -38,7 +39,7 @@ export function useSearch() {
   }, []);
 
   const searchMedicines = useCallback(
-    async (overrideQuery?: string) => {
+    async (overrideQuery?: string, pincode = DEFAULT_PINCODE) => {
       const q = (overrideQuery ?? state.query).trim();
       if (!q || lastQueryRef.current === q) return;
 
@@ -46,17 +47,13 @@ export function useSearch() {
 
       const controller = new AbortController();
       controllerRef.current = controller;
-
-      timeoutRef.current = setTimeout(() => {
-        controller.abort();
-      }, SEARCH_TIMEOUT_MS);
+      timeoutRef.current = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS);
 
       const myId = ++requestIdRef.current;
-
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const raw = await fetchMedicines(q, "LUCKNOW", state.raw, controller.signal);
+        const raw = await fetchMedicines(q, pincode, state.raw, controller.signal);
         const results = mapMedicineItems(raw);
 
         if (myId === requestIdRef.current) {
@@ -65,7 +62,6 @@ export function useSearch() {
         }
       } catch (err) {
         if (isAbortError(err)) return;
-
         if (myId === requestIdRef.current) {
           setState((prev) => ({
             ...prev,

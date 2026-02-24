@@ -1,7 +1,7 @@
 const BACKEND_URL = (
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   process.env.BACKEND_URL ||
-  "http://localhost:8000"       // ← http:// required for local dev
+  "http://localhost:8000"
 ).replace(/\/+$/, "");
 
 export class ApiError extends Error {
@@ -13,11 +13,11 @@ export class ApiError extends Error {
 
 export async function fetchMedicines(
   query: string,
-  city = "CHENNAI",
+  pincode = "603203",
   raw = false,
   signal?: AbortSignal
 ): Promise<unknown[]> {
-  const params = new URLSearchParams({ q: query, city, raw: String(raw) });
+  const params = new URLSearchParams({ q: query, pincode, raw: String(raw) });
   const url = `${BACKEND_URL}/api/search?${params.toString()}`;
 
   const res = await fetch(url, { signal });

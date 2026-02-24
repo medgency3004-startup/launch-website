@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/hooks/useSearch";
+import { useLocation } from "@/hooks/useLocation";
 import { ALLOWED_PROVIDERS, VERIFIED_PROVIDERS } from "@/constants/providers";
 import { SortOption } from "@/types";
 import { SearchBar } from "./SearchBar";
@@ -10,15 +11,17 @@ import { FilterSidebar } from "./FilterSidebar";
 import { MetricsBar } from "./MetricsBar";
 import { ResultsList } from "./ResultsList";
 
+const DEFAULT_PINCODE = "603203";
+
 export function SearchContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const initialQuery = searchParams.get("q") ?? "";
 
     const { state, setQuery, searchMedicines, clearSearch } = useSearch();
+    const { city, pincode, loading: locationLoading } = useLocation();
     const didInitialSearch = useRef(false);
 
-    // Filter & sort state
     const [showFilters, setShowFilters] = useState(false);
     const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
     const [minPrice, setMinPrice] = useState("");
@@ -32,15 +35,16 @@ export function SearchContent() {
     );
     const providerOptions = useMemo(() => [...ALLOWED_PROVIDERS].sort(), []);
 
-    // Run initial search from query param
+    // Wait for location before running the initial search
     useEffect(() => {
+        if (locationLoading) return;
         if (didInitialSearch.current) return;
         didInitialSearch.current = true;
         setQuery(initialQuery);
         if (initialQuery.trim()) {
-            searchMedicines(initialQuery);
+            searchMedicines(initialQuery, pincode ?? DEFAULT_PINCODE);
         }
-    }, [initialQuery, setQuery, searchMedicines]);
+    }, [locationLoading, initialQuery, pincode, setQuery, searchMedicines]);
 
     const filteredResults = useMemo(() => {
         const min = minPrice ? Number(minPrice) : undefined;
@@ -90,8 +94,10 @@ export function SearchContent() {
             <SearchBar
                 query={state.query}
                 onQueryChange={setQuery}
-                onSearch={() => searchMedicines()}
+                onSearch={() => searchMedicines(undefined, pincode ?? DEFAULT_PINCODE)}
                 onClear={handleClear}
+                city={city}
+                locationLoading={locationLoading}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
@@ -118,7 +124,9 @@ export function SearchContent() {
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div className="text-sm text-slate-600">
-                            {state.loading ? "Searching…" : `${filteredResults.length} offers`}
+                            {locationLoading || state.loading
+                                ? "Searching…"
+                                : `${filteredResults.length} offers`}
                         </div>
                         <div className="flex items-center gap-3">
                             <button
@@ -137,7 +145,7 @@ export function SearchContent() {
 
                     <ResultsList
                         results={filteredResults}
-                        loading={state.loading}
+                        loading={locationLoading || state.loading}
                         error={state.error}
                     />
                 </section>

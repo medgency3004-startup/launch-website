@@ -10,13 +10,15 @@ from app.config import MAX_AGGREGATOR_WAIT_SECONDS
 
 logger = logging.getLogger(__name__)
 
+# Providers that support pincode-aware search receive it as second arg.
+# Providers that are not location-aware (truemeds, pharmeasy, medkart) ignore it.
 PROVIDERS = [
-    ("1mg",       lambda medicine, city: one_mg.search(medicine, city)),
-    ("Apollo",    lambda medicine, city: apollo.search(medicine)),
-    ("TrueMeds",  lambda medicine, city: truemeds.search(medicine)),
-    ("PharmEasy", lambda medicine, city: pharmeasy.search(medicine)),
-    ("Medkart",   lambda medicine, city: medkart.search(medicine)),
-    ("Netmeds",   lambda medicine, city: netmeds.search(medicine)),
+    ("1mg",       lambda m, p: one_mg.search(m, p)),
+    ("Apollo",    lambda m, p: apollo.search(m, p)),
+    ("TrueMeds",  lambda m, p: truemeds.search(m)),
+    ("PharmEasy", lambda m, p: pharmeasy.search(m)),
+    ("Medkart",   lambda m, p: medkart.search(m)),
+    ("Netmeds",   lambda m, p: netmeds.search(m, p)),
 ]
 
 
@@ -28,14 +30,14 @@ def _safe_call(name: str, fn) -> List[Medicine]:
         return []
 
 
-def search_all_raw(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
-    """Fetch results from all providers concurrently, with a hard deadline."""
+def search_all_raw(medicine: str, pincode: str = "603203") -> List[Medicine]:
+    """Fetch results from all providers concurrently with a hard deadline."""
     results: List[Medicine] = []
 
     executor = ThreadPoolExecutor(max_workers=len(PROVIDERS))
     try:
         futures = {
-            executor.submit(_safe_call, name, lambda fn=fn: fn(medicine, city))
+            executor.submit(_safe_call, name, lambda fn=fn: fn(medicine, pincode))
             for name, fn in PROVIDERS
         }
         deadline = time.monotonic() + MAX_AGGREGATOR_WAIT_SECONDS
@@ -44,13 +46,14 @@ def search_all_raw(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
         while pending:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                logger.warning("Aggregator deadline reached with %d futures pending", len(pending))
+                logger.warning(
+                    "Aggregator deadline reached with %d futures pending", len(pending)
+                )
                 break
             done, pending = wait(pending, timeout=remaining, return_when=FIRST_COMPLETED)
             for fut in done:
                 try:
-                    chunk = fut.result()
-                    results.extend(chunk)
+                    results.extend(fut.result())
                 except Exception as e:
                     logger.error("Aggregator future error: %s", e)
     finally:
@@ -59,7 +62,6 @@ def search_all_raw(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
     return results
 
 
-def search_all(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
+def search_all(medicine: str, pincode: str = "603203") -> List[Medicine]:
     """Return the cheapest relevant result per provider."""
-    results = search_all_raw(medicine, city)
-    return cheapest_per_provider(results)
+    return cheapest_per_provider(search_all_raw(medicine, pincode))
