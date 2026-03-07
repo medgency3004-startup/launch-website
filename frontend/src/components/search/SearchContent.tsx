@@ -19,9 +19,13 @@ export function SearchContent() {
     const initialQuery = searchParams.get("q") ?? "";
 
     const { state, setQuery, searchMedicines, clearSearch } = useSearch();
-    const { city, pincode, loading: locationLoading } = useLocation();
+    const { city, pincode: detectedPincode, loading: locationLoading } = useLocation();
+
+    // activePincode starts null until location resolves or user sets one manually
+    const [activePincode, setActivePincode] = useState<string | null>(null);
     const didInitialSearch = useRef(false);
 
+    // Filter & sort state
     const [showFilters, setShowFilters] = useState(false);
     const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
     const [minPrice, setMinPrice] = useState("");
@@ -35,16 +39,31 @@ export function SearchContent() {
     );
     const providerOptions = useMemo(() => [...ALLOWED_PROVIDERS].sort(), []);
 
-    // Wait for location before running the initial search
+    // Once location resolves, set the active pincode (only if user hasn't overridden it yet)
     useEffect(() => {
-        if (locationLoading) return;
+        if (!locationLoading && activePincode === null) {
+            setActivePincode(detectedPincode ?? DEFAULT_PINCODE);
+        }
+    }, [locationLoading, detectedPincode, activePincode]);
+
+    // Run initial search once we have a pincode
+    useEffect(() => {
+        if (activePincode === null) return;
         if (didInitialSearch.current) return;
         didInitialSearch.current = true;
         setQuery(initialQuery);
         if (initialQuery.trim()) {
-            searchMedicines(initialQuery, pincode ?? DEFAULT_PINCODE);
+            searchMedicines(initialQuery, activePincode);
         }
-    }, [locationLoading, initialQuery, pincode, setQuery, searchMedicines]);
+    }, [activePincode, initialQuery, setQuery, searchMedicines]);
+
+    // When user manually changes pincode, re-run current search with new pincode
+    const handlePincodeChange = (newPincode: string) => {
+        setActivePincode(newPincode);
+        if (state.query.trim()) {
+            searchMedicines(state.query, newPincode);
+        }
+    };
 
     const filteredResults = useMemo(() => {
         const min = minPrice ? Number(minPrice) : undefined;
@@ -76,7 +95,6 @@ export function SearchContent() {
             .filter((r) => VERIFIED_PROVIDERS.includes(r.pharmacy.toLowerCase() as never))
             .map((r) => r.price)
             .filter((p) => p > 0);
-
         return {
             best: prices.length ? Math.min(...prices) : null,
             cheapest: prices.length ? Math.min(...prices) : null,
@@ -89,15 +107,19 @@ export function SearchContent() {
         router.push("/search");
     };
 
+    const isLoading = locationLoading || state.loading;
+
     return (
         <main className="mx-auto w-full max-w-6xl px-6 py-8 flex-1">
             <SearchBar
                 query={state.query}
                 onQueryChange={setQuery}
-                onSearch={() => searchMedicines(undefined, pincode ?? DEFAULT_PINCODE)}
+                onSearch={() => searchMedicines(undefined, activePincode ?? DEFAULT_PINCODE)}
                 onClear={handleClear}
                 city={city}
+                pincode={activePincode}
                 locationLoading={locationLoading}
+                onPincodeChange={handlePincodeChange}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
@@ -124,9 +146,7 @@ export function SearchContent() {
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div className="text-sm text-slate-600">
-                            {locationLoading || state.loading
-                                ? "Searching…"
-                                : `${filteredResults.length} offers`}
+                            {isLoading ? "Searching…" : `${filteredResults.length} offers`}
                         </div>
                         <div className="flex items-center gap-3">
                             <button
@@ -145,7 +165,7 @@ export function SearchContent() {
 
                     <ResultsList
                         results={filteredResults}
-                        loading={locationLoading || state.loading}
+                        loading={isLoading}
                         error={state.error}
                     />
                 </section>
