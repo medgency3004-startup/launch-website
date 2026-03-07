@@ -1,69 +1,90 @@
-import time
+import re
+import logging
 import requests
-from typing import List
+from typing import List, Optional
 
 from app.models.medicine import Medicine
 from app.utils.parsers import parse_price
+from app.providers.base import TRUEMEDS_HEADERS, TIMEOUT
+
+logger = logging.getLogger(__name__)
+
+TRUEMEDS_SEARCH_API = "https://nal.tmmumbai.in/CustomerService/getSearchSuggestion"
+TRUEMEDS_PINCODE_API = "https://nal.tmmumbai.in/CustomerService/v1/checkPincodeServiceability"
+
+DEFAULT_WAREHOUSE_ID = 20
+DEFAULT_VARIANT_ID = 18
 
 
-TRUEMEDS_SEARCH_API = (
-    "https://nal.tmmumbai.in/CustomerService/getSearchSuggestion"
-)
+def _get_warehouse_id(pincode: str) -> Optional[int]:
+    """
+    Fetches the correct warehouseId for a given pincode from TrueMeds.
+    Returns None if the request fails, so the caller can fall back to the default.
+    """
+    try:
+        resp = requests.get(
+            TRUEMEDS_PINCODE_API,
+            params={"pincode": pincode},
+            headers=TRUEMEDS_HEADERS,
+            timeout=TIMEOUT,
+        )
+        if resp.status_code != 200:
+            logger.warning("TrueMeds pincode API HTTP %s", resp.status_code)
+            return None
 
-BASE_HEADERS = {
-    "accept": "application/json, text/plain, */*",
-    "accept-language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
-    "origin": "https://www.truemeds.in",
-    "referer": "https://www.truemeds.in/",
-    "user-agent": (
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) "
-        "AppleWebKit/605.1.15 (KHTML, like Gecko) "
-        "Version/18.5 Mobile Safari/605.1.15"
-    ),
-    "sec-fetch-site": "cross-site",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-dest": "empty",
-}
+        pincode_data = (
+            resp.json()
+            .get("responseData", {})
+            .get("pincodeData", [])
+        )
+
+        if pincode_data and isinstance(pincode_data, list):
+            return pincode_data[0].get("warehouseId")
+
+    except requests.RequestException as e:
+        logger.warning("TrueMeds pincode lookup failed: %s", e)
+
+    return None
 
 
-def search(
-    query: str,
-    warehouse_id: int = 20,
-    variant_id: int = 18,
-) -> List[Medicine]:
+def _build_url(sku_name: str, product_code: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", sku_name.lower()).strip("-")
+    return f"https://www.truemeds.in/medicine/{slug}-{product_code}"
+
+
+def search(query: str, pincode: str = "603203") -> List[Medicine]:
+    warehouse_id = _get_warehouse_id(pincode) or DEFAULT_WAREHOUSE_ID
 
     params = {
         "searchString": query,
         "isMultiSearch": "true",
         "elasticSearchType": "SEARCH_SUGGESTION",
         "warehouseId": warehouse_id,
-        "variantId": variant_id,
+        "variantId": DEFAULT_VARIANT_ID,
         "searchVariant": "N",
         "orderConfirmSrc": "WEBSITE",
         "sourceVersion": "TM_WEBSITE_V_4.14.0",
     }
 
-    start = time.time()
-
     try:
         resp = requests.get(
             TRUEMEDS_SEARCH_API,
             params=params,
-            headers=BASE_HEADERS,
-            timeout=15,
+            headers=TRUEMEDS_HEADERS,
+            timeout=TIMEOUT,
         )
-    except requests.RequestException:
-        print("❌ TrueMeds network error")
+    except requests.RequestException as e:
+        logger.error("TrueMeds network error: %s", e)
         return []
 
     if resp.status_code != 200:
-        print(f"❌ TrueMeds HTTP {resp.status_code}")
+        logger.warning("TrueMeds HTTP %s", resp.status_code)
         return []
 
-    data = resp.json()
     product_list = (
-        data.get("responseData", {})
-            .get("productList", [])
+        resp.json()
+        .get("responseData", {})
+        .get("productList", [])
     )
 
     results: List[Medicine] = []
@@ -75,24 +96,19 @@ def search(
 
         mrp = parse_price(product.get("mrp"))
         selling_price = parse_price(product.get("sellingPrice"))
+        sku_name = product.get("skuName") or ""
+        product_code = product.get("productCode")
 
         results.append(
             Medicine(
                 provider="truemeds",
-                medicine_name=product.get("skuName"),
-                available=True,  # ✅ IMPORTANT FIX
+                medicine_name=sku_name,
+                available=True,
                 mrp=mrp,
                 price=selling_price if selling_price is not None else mrp,
-                url=(
-                    "https://www.truemeds.in/product/"
-                    + product.get("productCode")
-                    if product.get("productCode")
-                    else None
-                ),
+                url=_build_url(sku_name, product_code) if sku_name and product_code else None,
             )
         )
 
-    elapsed_ms = int((time.time() - start) * 1000)
-    print(f"TrueMeds gave {len(results)} items ({elapsed_ms} ms)")
-
+    logger.info("TrueMeds returned %d items (warehouse %s)", len(results), warehouse_id)
     return results

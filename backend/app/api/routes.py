@@ -1,14 +1,36 @@
-from fastapi import APIRouter, Query
+import logging
 from typing import List
 
+from fastapi import APIRouter, Query
 from app.schemas.medicine import MedicineOut
-from app.services.aggregator import search_all_raw
+from app.services.aggregator import search_all, search_all_raw
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Medicines"])
+
+DEFAULT_PINCODE = "603203"
+
 
 @router.get("/search", response_model=List[MedicineOut])
 def search_medicine(
     q: str = Query(..., min_length=2),
-    city: str = Query("DELHI"),
+    pincode: str = Query(DEFAULT_PINCODE, description="User's pincode for location-aware pricing"),
+    raw: bool = Query(False, description="Return unfiltered results from all providers"),
 ):
-    return search_all_raw(q, city)
+    try:
+        items = search_all_raw(q, pincode) if raw else search_all(q, pincode)
+        return [
+            MedicineOut(
+                provider=item.provider,
+                medicine_name=item.medicine_name,
+                available=bool(item.available),
+                mrp=item.mrp,
+                price=item.price if item.price is not None else item.mrp,
+                url=item.url,
+            )
+            for item in items
+        ]
+    except Exception as e:
+        logger.error("Search endpoint error: %s", e)
+        return []

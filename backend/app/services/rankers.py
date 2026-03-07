@@ -1,66 +1,42 @@
 from typing import List, Dict
 from app.models.medicine import Medicine
 
+MEDICINE_FORMS = (
+    "tablet", "capsule", "suspension", "syrup",
+    "drops", "injection", "cream", "gel", "ointment",
+)
 
-def is_relevant(med: Medicine, query: str) -> bool:
+# Providers whose results are noisy and need form-based filtering
+STRICT_FORM_PROVIDERS = {"tata_1mg", "apollo"}
+
+
+def is_relevant(med: Medicine) -> bool:
     """
-    Decide whether a medicine is relevant to the user's query.
-    This logic is QUERY-DRIVEN, not hard-coded to any brand.
+    Returns True if the result looks like an actual medicine listing.
+    TrueMeds is generic-heavy and does not need form filtering.
+    1mg and Apollo are noisy and restricted to known medicine forms.
     """
-
-    name = (med.medicine_name or "").lower()
-    query = query.lower()
-
-    # break query into meaningful tokens
-    tokens = [t for t in query.split() if len(t) > 2]
-
-    # at least one query token must match the medicine name
-    if not any(token in name for token in tokens):
-        return False
-
-    # Provider-specific noise handling
-    if med.provider != "truemeds":
-        # 1mg & Apollo are noisy → restrict to medicine forms
-        allowed_forms = (
-            "tablet",
-            "capsule",
-            "suspension",
-            "syrup",
-            "drops",
-            "injection",
-        )
-        if not any(form in name for form in allowed_forms):
-            return False
-
-    # TrueMeds is generic-heavy → do not restrict by form
+    if med.provider in STRICT_FORM_PROVIDERS:
+        name = (med.medicine_name or "").lower()
+        return any(form in name for form in MEDICINE_FORMS)
     return True
 
 
-def cheapest_per_provider(
-    results: List[Medicine],
-    query: str
-) -> List[Medicine]:
+def cheapest_per_provider(results: List[Medicine]) -> List[Medicine]:
     """
-    From all results, pick the cheapest relevant medicine per provider.
-    Uses selling price if available, otherwise falls back to MRP.
+    From all results, return the single cheapest relevant medicine per provider.
+    Effective price = selling price if set, otherwise MRP.
     """
-
     best: Dict[str, Medicine] = {}
 
     for med in results:
-        # availability check
         if not med.available:
             continue
-
-        # price normalization (TrueMeds fallback handled here)
-        effective_price = (
-            med.price if med.price is not None else med.mrp
-        )
-        if effective_price is None:
+        if not is_relevant(med):
             continue
 
-        # relevance filtering
-        if not is_relevant(med, query):
+        effective_price = med.price if med.price is not None else med.mrp
+        if effective_price is None:
             continue
 
         current = best.get(med.provider)
@@ -68,10 +44,7 @@ def cheapest_per_provider(
             best[med.provider] = med
             continue
 
-        current_price = (
-            current.price if current.price is not None else current.mrp
-        )
-
+        current_price = current.price if current.price is not None else current.mrp
         if current_price is None or effective_price < current_price:
             best[med.provider] = med
 
