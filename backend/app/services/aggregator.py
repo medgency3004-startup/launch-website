@@ -1,4 +1,5 @@
 from typing import List
+import random
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 import time
 from app.models.medicine import Medicine
@@ -45,6 +46,7 @@ def search_all_raw(medicine: str, city: str = "CHENNAI") -> List[Medicine]:
                     pass
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
+    random.shuffle(results)
     return results
 
 
